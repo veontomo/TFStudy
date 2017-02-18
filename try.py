@@ -1,6 +1,7 @@
 import os
 import tensorflow as tf
 
+print("tensorflow version: " + tf.__version__)
 logDir = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/") + "/log/"
 print("Write the log to folder: " + logDir)
 
