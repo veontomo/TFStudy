@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+# https://github.com/nlintz/TensorFlow-Tutorials/blob/master/01_linear_regression.py
 import tensorflow as tf
 import numpy as np
 import os
