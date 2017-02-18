@@ -28,7 +28,7 @@ def base3(n):
 	return base(n, 3)
 
 def padding(n, l):
-	return (n*[0] + l)[len(l):len(l)+n]
+	return (n*[0] + l)[-n:]
 
 def padding4(l):
 	return padding(4, l)
