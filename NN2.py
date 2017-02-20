@@ -60,6 +60,8 @@ w = tf.Variable(np.random.rand(1, L + 1), name='weight')
 # define the cost function
 cost = tf.square(tf.cast(Y, tf.float64) - model(X, w)) 
 
+accumError = tf.reduce_sum(tf.square(tf.matmul(tf.cast(X, tf.float64), w, False, True) - tf.cast(tf.transpose(Y), tf.float64)))
+
 # construct an optimizer to minimize cost and fit line to my data
 train_op = tf.train.GradientDescentOptimizer(0.01).minimize(cost) 
 
@@ -71,9 +73,12 @@ with tf.Session() as sess:
     for i in range(10):
         for (x, y) in zip(trainingX, trainingY):
             sess.run(train_op, feed_dict={X: x, Y: y})
-
     print(sess.run(w))
-
+    accumError = sess.run(accumError, feed_dict={X: trainingX, Y: [trainingY]})
+    print("accum error: ", accumError)
     for i in range(N, M):
         print(inputIntegers[i], dataX[i], dataY[i], sess.run(model(dataX[i], w)))
 
+    print("on training set")
+    for i in range(min(N // 10, 3)):
+        print(inputIntegers[i], dataX[i], dataY[i], sess.run(model(dataX[i], w)))
