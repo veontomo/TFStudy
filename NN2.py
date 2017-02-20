@@ -37,8 +37,8 @@ def appendBias(l):
 	return [1] + l
 
 def isEven(n):
-	"0, if n is even, 1 otherwise"
-	return n % 2
+	"1, if n is even, 0 otherwise"
+	return 1-(n % 2)
 
 dataBase3 = list(map(base3, inputIntegers))
 dataX = list(map(appendBias, list(map(padding, dataBase3))))
@@ -54,13 +54,22 @@ Y = tf.placeholder("int8", name="inputY")
 def model(X, w):
 	return tf.reduce_sum(tf.multiply(tf.cast(X, tf.float64), w)) 
 
+def sigmoid(X, w):
+	return tf.sigmoid(model(X, w))
+
 # create a weight vector with a bias term
 w = tf.Variable(np.random.rand(1, L + 1), name='weight')
-
+one = tf.constant(1.0, tf.float64)
 # define the cost function
-cost = tf.square(tf.cast(Y, tf.float64) - model(X, w)) 
+#cost = tf.square(tf.cast(Y, tf.float64) - model(X, w)) 
+# define the sigmoid cost
+#cost = tf.square(tf.cast(Y, tf.float64) - sigmoid(X, w)) 
+cost = - tf.multiply(tf.cast(Y, tf.float64), tf.log(sigmoid(X, w))) - tf.multiply(one - tf.cast(Y, tf.float64), tf.log(one - sigmoid(X, w)))
 
-accumError = tf.reduce_mean(tf.square(tf.matmul(tf.cast(X, tf.float64), w, False, True) - tf.cast(tf.transpose(Y), tf.float64)))
+
+# accumError = tf.reduce_mean(tf.square(tf.matmul(tf.cast(X, tf.float64), w, False, True) - tf.cast(tf.transpose(Y), tf.float64)))
+
+# accumError = - tf.matmul(tf.cast(Y, tf.float64), tf.log(tf.sigmoid(tf.matmul(tf.cast(X, tf.float64), w, False, True))))	
 
 # construct an optimizer to minimize cost and fit line to my data
 train_op = tf.train.GradientDescentOptimizer(0.01).minimize(cost) 
@@ -70,19 +79,19 @@ with tf.Session() as sess:
     # you need to initialize variables (in this case just variable W)
     tf.global_variables_initializer().run()
 
-    for i in range(100):
+    for i in range(10):
         for (x, y) in zip(trainingX, trainingY):
             sess.run(train_op, feed_dict={X: x, Y: y})
     print(sess.run(w))
-    trainingError = sess.run(accumError, feed_dict={X: trainingX, Y: [trainingY]})
-    crossError = sess.run(accumError, feed_dict={X: dataX[N:], Y: [dataY[N:]]})
+    trainingError = sess.run(cost, feed_dict={X: trainingX, Y: [trainingY]})
+    crossError = sess.run(cost, feed_dict={X: dataX[N:], Y: [dataY[N:]]})
     print("predictions")
     for i in range(N, M):
-        print(inputIntegers[i], dataX[i], dataY[i], sess.run(model(dataX[i], w)))
+        print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid(dataX[i], w)))
 
     print("on training set")
     for i in range(min(N // 10, 3)):
-        print(inputIntegers[i], dataX[i], dataY[i], sess.run(model(dataX[i], w)))
+        print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid(dataX[i], w)))
 
     print("training error: ", trainingError)
     print("cross error: ", crossError)
