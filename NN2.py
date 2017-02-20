@@ -1,16 +1,19 @@
 import os
 import tensorflow as tf
 import numpy as np
-
+import random
 logDir = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/") + "/log/"
 print("Write the log to folder: " + logDir)
 print("tensorflow version: " + tf.__version__)
-L = 3 # dimension of the input vector
-M = 15 # the number of the input vectors
+L = 4 # dimension of the input vector
+M = 3*3*3*3 # the number of available input data (training data + cross-check data + verification data)
+N = 4*M // 5  # size of the training set
 
 # trX = [[0,2,0], [0,2,1]]
 # trY = [1,0]
+# Create a list of integers from 1 to M-1 in a random order
 data = list(range(M))
+random.shuffle(data)
 
 def base(n, b):
 	r = n // b
@@ -32,21 +35,25 @@ def padding4(l):
 	return padding(4, l)
 
 def isEven(n):
-	"1, if n is even, 0 otherwise"
-	return 1 - (n % 2)
+	"0, if n is even, 1 otherwise"
+	return n % 2
 
 data2 = list(map(base3, data))
 dataX = list(map(padding4, data2))
 dataY = list(map(isEven, data))
 
+# extract the first elements in order to use tham as a trainig set
+trainingX = dataX[:N]
+trainingY = dataY[:N]
+
 X = tf.placeholder("int8", name="inputX") # create symbolic variables
 Y = tf.placeholder("int8", name="inputY")
 
 def model(X, w):
-	return tf.matmul(tf.cast(X, tf.float64), w) # lr is just X*w so this model line is pretty simple
+	return tf.reduce_sum(tf.multiply(tf.cast(X, tf.float64), w)) # lr is just X*w so this model line is pretty simple
 
 w = tf.Variable(np.random.rand(1, L), name='weight')
- # w = tf.Variable(0.0, name="weights") # create a shared variable (like theano.shared) for the weight matrix
+ 
 y_model = model(X, w)
 
 cost = tf.square(tf.cast(Y, tf.float64) - y_model) # use square error for cost function
@@ -58,44 +65,13 @@ with tf.Session() as sess:
     # you need to initialize variables (in this case just variable W)
     tf.global_variables_initializer().run()
 
-    for i in range(5):
-        for (x, y) in zip(dataX, dataY):
+    for i in range(1000):
+        for (x, y) in zip(trainingX, trainingY):
+            # print("x", x, "y", y, "w", w)
             sess.run(train_op, feed_dict={X: x, Y: y})
-            print(sess.run(w))
-            print("x=", x, "y=", y)
 
-    # tf.summary.FileWriter(logDir, sess.graph).close()
-    # print(sess.run(w)) # It should be something around 2
+    print(sess.run(w))
 
-# x0 = tf.Variable([[1, 0, 1]], name="init_data")
-# x = tf.placeholder(tf.int8, shape=(1, N), name='input')
-# x = x0
-# w = tf.Variable(np.random.rand(M, 1), name='weight')
-# z = tf.matmul(tf.cast(x, tf.float64), w)
-# y = tf.nn.sigmoid(z, name="activation_fun")
+    for i in range(N, M):
+        print(data[i], dataX[i], dataY[i], sess.run(model(dataX[i], w)))
 
-
-# y_ = tf.constant([[0.0]])
-# loss = tf.square(y - y_)
-# optim = tf.train.GradientDescentOptimizer(learning_rate=0.01)
-# grads_and_vars = optim.compute_gradients(loss)
-# train_step = tf.train.GradientDescentOptimizer(0.025).minimize(loss)
-# with tf.Session() as session:
- # tf.summary.FileWriter(logDir, session.graph).close()
- # session.run(tf.global_variables_initializer())
- # print(session.run(x))
- # print("x = ")
- # print(session.run(x))
- # print("w = ")
- # print(session.run(w))
- # print("z = ")
- # print(session.run(z))
- # print("y = ")
- # print(session.run(y))
-
-
- # print(session.run(grads_and_vars[0	][0]))
- # session.run(optim.apply_gradients(grads_and_vars))
- # for i in range(100):
-  # session.run(train_step)
-  # print(session.run(w))
