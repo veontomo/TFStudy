@@ -8,7 +8,7 @@ print("tensorflow version: " + tf.__version__)
 
 L = 5         # dimension of the input vector
 M = 3*3*3*3*3 # the number of available input data (training data + cross-check data + verification data)
-N = 4*M // 5  # size of the training set
+N = 9*M // 10  # size of the training set
 
 print("Parameters: ", L, " - input vector dimension", M, " - size of data set", N, " - training data size")
 
@@ -60,7 +60,7 @@ w = tf.Variable(np.random.rand(1, L + 1), name='weight')
 # define the cost function
 cost = tf.square(tf.cast(Y, tf.float64) - model(X, w)) 
 
-accumError = tf.reduce_sum(tf.square(tf.matmul(tf.cast(X, tf.float64), w, False, True) - tf.cast(tf.transpose(Y), tf.float64)))
+accumError = tf.reduce_mean(tf.square(tf.matmul(tf.cast(X, tf.float64), w, False, True) - tf.cast(tf.transpose(Y), tf.float64)))
 
 # construct an optimizer to minimize cost and fit line to my data
 train_op = tf.train.GradientDescentOptimizer(0.01).minimize(cost) 
@@ -70,15 +70,19 @@ with tf.Session() as sess:
     # you need to initialize variables (in this case just variable W)
     tf.global_variables_initializer().run()
 
-    for i in range(10):
+    for i in range(100):
         for (x, y) in zip(trainingX, trainingY):
             sess.run(train_op, feed_dict={X: x, Y: y})
     print(sess.run(w))
-    accumError = sess.run(accumError, feed_dict={X: trainingX, Y: [trainingY]})
-    print("accum error: ", accumError)
+    trainingError = sess.run(accumError, feed_dict={X: trainingX, Y: [trainingY]})
+    crossError = sess.run(accumError, feed_dict={X: dataX[N:], Y: [dataY[N:]]})
+    print("predictions")
     for i in range(N, M):
         print(inputIntegers[i], dataX[i], dataY[i], sess.run(model(dataX[i], w)))
 
     print("on training set")
     for i in range(min(N // 10, 3)):
         print(inputIntegers[i], dataX[i], dataY[i], sess.run(model(dataX[i], w)))
+
+    print("training error: ", trainingError)
+    print("cross error: ", crossError)
