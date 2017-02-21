@@ -17,8 +17,8 @@ inputIntegers = list(range(M))
 random.shuffle(inputIntegers)
 
 def base(n, b):
+	"""Base-b representation of number n"""
 	r = n // b
-	"Base-b representation of number n"
 	if r == 0:
 		return [n]
 	else: 
@@ -30,15 +30,15 @@ def base3(n):
 	return base(n, 3)
 
 def padding(l):
-	"Pads given list to have a size L"
+	"""Pads given list to have a size L"""
 	return (L*[0] + l)[-L:]
 
 def appendBias(l):
 	return [1] + l
 
 def isEven(n):
-	"1, if n is even, 0 otherwise"
-	return 1-(n % 2)
+	"""[1], if n is even, [0] otherwise"""
+	return [1-(n % 2)]
 
 dataBase3 = list(map(base3, inputIntegers))
 dataX = list(map(appendBias, list(map(padding, dataBase3))))
@@ -51,11 +51,12 @@ trainingY = dataY[:N]
 X = tf.placeholder("int8", name="inputX") # create symbolic variables
 Y = tf.placeholder("int8", name="inputY")
 
-def model(X, w):
-	return tf.reduce_sum(tf.multiply(tf.cast(X, tf.float64), w)) 
+
+def Z(X, w):
+	return tf.matmul(tf.cast(X, tf.float64), w, False, True)
 
 def sigmoid(X, w):
-	return tf.sigmoid(model(X, w))
+	return tf.sigmoid(Z(X, w))
 
 # create a weight vector with a bias term
 w = tf.Variable(np.random.rand(1, L + 1), name='weight')
@@ -64,7 +65,8 @@ one = tf.constant(1.0, tf.float64)
 #cost = tf.square(tf.cast(Y, tf.float64) - model(X, w)) 
 # define the sigmoid cost
 #cost = tf.square(tf.cast(Y, tf.float64) - sigmoid(X, w)) 
-cost = - tf.multiply(tf.cast(Y, tf.float64), tf.log(sigmoid(X, w))) - tf.multiply(one - tf.cast(Y, tf.float64), tf.log(one - sigmoid(X, w)))
+# cost = - tf.multiply(tf.cast(Y, tf.float64), tf.log(sigmoid(X, w))) - tf.multiply(one - tf.cast(Y, tf.float64), tf.log(one - sigmoid(X, w)))
+cost = - tf.reduce_sum(tf.multiply(tf.cast(Y, tf.float64), tf.log(sigmoid(X, w)))) - tf.reduce_sum(tf.multiply(tf.cast( Y, tf.float64), tf.log( sigmoid(X, w))))
 
 
 # accumError = tf.reduce_mean(tf.square(tf.matmul(tf.cast(X, tf.float64), w, False, True) - tf.cast(tf.transpose(Y), tf.float64)))
@@ -79,19 +81,24 @@ with tf.Session() as sess:
     # you need to initialize variables (in this case just variable W)
     tf.global_variables_initializer().run()
 
-    for i in range(10):
-        for (x, y) in zip(trainingX, trainingY):
-            sess.run(train_op, feed_dict={X: x, Y: y})
+    # for i in range(10):
+        # sess.run(train_op, feed_dict={X: trainingX, Y: trainingY})
+
     print(sess.run(w))
-    trainingError = sess.run(cost, feed_dict={X: trainingX, Y: [trainingY]})
-    crossError = sess.run(cost, feed_dict={X: dataX[N:], Y: [dataY[N:]]})
-    print("predictions")
-    for i in range(N, M):
-        print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid(dataX[i], w)))
+    print(sess.run(Y, feed_dict={Y: trainingY}))
+    print(sess.run(sigmoid(X, w), feed_dict={X : trainingX}))
+    print(sess.run(cost, feed_dict={X: trainingX, Y: trainingY}))
+    print(sess.run(one.dims, feed_dict={X: trainingX, Y: trainingY}))
+    
+    # trainingError = sess.run(cost, feed_dict={X: trainingX, Y: trainingY})
+    # crossError = sess.run(cost, feed_dict={X: dataX[N:], Y: dataY[N:]})
+    # print("predictions")
+    # for i in range(N, M):
+        # print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid(dataX[i], w)))
 
-    print("on training set")
-    for i in range(min(N // 10, 3)):
-        print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid(dataX[i], w)))
+    # print("on training set")
+    # for i in range(min(N // 10, 3)):
+        # print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid(dataX[i], w)))
 
-    print("training error: ", trainingError)
-    print("cross error: ", crossError)
+    # print("training error: ", trainingError)
+    # print("cross error: ", crossError)
