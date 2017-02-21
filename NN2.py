@@ -8,9 +8,9 @@ logDir = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/") + "/log/
 print("Write the log to folder: " + logDir)
 print("tensorflow version: " + tf.__version__)
 
-L = 5         # dimension of the input vector
-M = 3*3*3*3*3 # the number of available input data (training data + cross-check data + verification data)
-N = 6*M // 10  # size of the training set
+L = 5                    # dimension of the input vector
+M = int(math.pow(3, L))  # the number of available input data (training data + cross-check data + verification data)
+N = 8*M // 10            # size of the training set
 
 print("Parameters:\n", L, " - input vector dimension\n", M, " - size of data set\n", N, " - training data size")
 
@@ -40,7 +40,11 @@ def appendBias(l):
 
 def isEven(n):
 	"""[1], if n is even, [0] otherwise"""
-	return [1-(n % 2)]
+	if (n % 2 == 0):
+	    return [1]
+	else:
+		return [0]
+
 
 dataBase3 = list(map(base3, inputIntegers))
 dataX = list(map(appendBias, list(map(padding, dataBase3))))
@@ -83,9 +87,9 @@ with tf.Session() as sess:
     # you need to initialize variables (in this case just variable W)
     tf.global_variables_initializer().run()
 
-    for i in range(1000):
+    for i in range(2000):
         sess.run(train_op, feed_dict={X: trainingX, Y: trainingY})
-        if i % 50 == 0:
+        if i % 100 == 0:
             print(sess.run(w))
 
     # print(sess.run(Y, feed_dict={Y: trainingY}))
@@ -94,9 +98,9 @@ with tf.Session() as sess:
     
     trainingError = sess.run(cost, feed_dict={X: trainingX, Y: trainingY})
     crossError = sess.run(cost, feed_dict={X: dataX[N:], Y: dataY[N:]})
-    # print("predictions")
-    # for i in range(N, M):
-        # print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid(dataX[i], w)))
+    print("predictions")
+    for i in range(N, M):
+        print(inputIntegers[i], dataX[i], dataY[i], sess.run(sigmoid([dataX[i]], w)))
 
     # print("on training set")
     # for i in range(min(N // 10, 3)):
