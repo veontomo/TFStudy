@@ -8,7 +8,7 @@ import numpy as np
 
 # Prepare the data
 
-L = 4                    # dimension of the input vector
+L = 6                    # dimension of the input vector
 M = int(math.pow(3, L))  # the number of available input data (training data + cross-check data + verification data)
 N = 8*M // 10            # size of the training set
 
@@ -55,8 +55,8 @@ Y_train = dataY[:N]
 
 
 model = Sequential()
-model.add(Dense(1, input_dim=L, activation='softmax'))
-# model.add(Dense(2, activation='sigmoid'))
+model.add(Dense(L, input_dim=L, activation='tanh'))
+model.add(Dense(1, activation='sigmoid'))
 # model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
