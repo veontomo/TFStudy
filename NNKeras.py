@@ -6,6 +6,8 @@ import math
 import numpy as np
 
 
+# http://machinelearningmastery.com/tutorial-first-neural-network-python-keras/
+
 # Prepare the data
 
 L = 6                    # dimension of the input vector
