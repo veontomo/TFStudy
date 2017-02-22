@@ -12,7 +12,7 @@ import numpy as np
 
 L = 6                    # dimension of the input vector
 M = int(math.pow(3, L))  # the number of available input data (training data + cross-check data + verification data)
-N = 8*M // 10            # size of the training set
+N = 6*M // 10            # size of the training set
 
 print("Parameters:\nL = ", L, " - input vector dimension\nM = ", M, " - size of data set\nN = ", N, " - training data size")
 
@@ -64,8 +64,14 @@ model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
-model.fit(dataX, dataY, nb_epoch=100, batch_size=32)
+model.fit(dataX, dataY, nb_epoch=20, batch_size=32)
 
 for layer in model.layers:
 	print(layer.get_weights())
+
+
+predictions = list(map(lambda x: 1 if (x>0.5) else 0, model.predict(dataX[N:])))
+
+for i in range(N, M):
+	print(inputIntegers[i], dataY[i], predictions[i-N])
 
