@@ -4,6 +4,8 @@ from keras.optimizers import SGD
 import random
 import math 
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 
 # http://machinelearningmastery.com/tutorial-first-neural-network-python-keras/
@@ -13,7 +15,7 @@ import numpy as np
 L = 6                    # dimension of the input vector
 M = int(math.pow(3, L))  # the number of available input data (training data + cross-check data + verification data)
 N = 6*M // 10            # size of the training set
-
+E = 50                   # the number of epochs
 print("Parameters:\nL = ", L, " - input vector dimension\nM = ", M, " - size of data set\nN = ", N, " - training data size")
 
 # Create a list of integers from 1 to M-1 in a random order
@@ -64,15 +66,49 @@ model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
 
-history = model.fit(dataX, dataY, nb_epoch=20, batch_size=32)
-print(history.history['loss'])
+history = model.fit(dataX, dataY, nb_epoch=E, batch_size=32, verbose= 0)
 
 for layer in model.layers:
 	print(layer.get_weights())
 
 
-# predictions = list(map(lambda x: 1 if (x>0.5) else 0, model.predict(dataX[N:])))
+predictions = list(map(lambda x: 1 if (x > 0.5) else 0, model.predict(dataX[N:])))
+actual = dataY[N:]
 
-# for i in range(N, M):
-	# print(inputIntegers[i], dataY[i], predictions[i-N])
+# Calculate F score on the cross-validation data
+tp = 0
+tn = 0
+fp = 0
+fn = 0
+for (pred, act) in zip(predictions, actual):
+	if pred == 1: 
+		if act == 1:
+			tp = tp + 1
+		else: 
+			fp = fp + 1
+	else: 
+		if act == 1:
+			fn = fn + 1
+		else:
+			tn = tn + 1
+
+precision = tp / (tp + fp)
+recall = tp / (tp + fn)
+
+Fscore = 2*precision*recall/(precision + recall)
+
+print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp, "\nprecision:", precision, "\nrecall:", recall, "\nF1 score:", Fscore)
+
+# visualize the training progress
+plt.plot(list(range(1, E+1)), history.history['fbeta_score'], 'k', color='green')
+plt.plot(list(range(1, E+1)), history.history['loss'], 'k', color='blue')
+plt.xlabel('Epoch')
+plt.title('Training progress')
+
+loss_line = mlines.Line2D([], [], color='blue', label='loss')
+fscore_line = mlines.Line2D([], [], color='green', label='F1 score')
+plt.legend(handles=[loss_line, fscore_line])
+
+plt.show()
+
 
