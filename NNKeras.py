@@ -62,16 +62,17 @@ model.add(Dense(1, activation='sigmoid'))
 # model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
-              metrics=['accuracy'])
+              metrics=['fbeta_score'])
 
-model.fit(dataX, dataY, nb_epoch=20, batch_size=32)
+history = model.fit(dataX, dataY, nb_epoch=20, batch_size=32)
+print(history.history['loss'])
 
 for layer in model.layers:
 	print(layer.get_weights())
 
 
-predictions = list(map(lambda x: 1 if (x>0.5) else 0, model.predict(dataX[N:])))
+# predictions = list(map(lambda x: 1 if (x>0.5) else 0, model.predict(dataX[N:])))
 
-for i in range(N, M):
-	print(inputIntegers[i], dataY[i], predictions[i-N])
+# for i in range(N, M):
+	# print(inputIntegers[i], dataY[i], predictions[i-N])
 
