@@ -5,13 +5,13 @@ from keras.optimizers import SGD
 import random
 import math 
 import numpy as np
-# import matplotlib.pyplot as plt
-# import matplotlib.lines as mlines
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
 filename = dirName + '/primes_20000'
 file = open(filename, 'r')
-primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:100]))
+primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:200]))
 file.close()
 print(primes[:20])
 
@@ -22,7 +22,7 @@ randomIntegers = list(range(2, maxNum))
 random.shuffle(randomIntegers)
 
 L = 6                    # dimension of the input vector
-M = len(primes)   # the number of available input data (training data + cross-check data + verification data)
+M = len(randomIntegers)   # the number of available input data (training data + cross-check data + verification data)
 N = 6*M // 10            # size of the training set
 E = 50   
 
@@ -68,9 +68,12 @@ history = model.fit(input, labels, nb_epoch=E, batch_size=32, verbose= 0)
 for layer in model.layers:
 	print(layer.get_weights())
 
-
-predictions = list(map(lambda x: 1 if (x > 0.5) else 0, model.predict(input[N:])))
+predictedValues = model.predict(input[N:])
+predictions = list(map(lambda x: 1 if (x > 0.5) else 0, predictedValues))
 actual = labels[N:]
+
+for (v, p, a) in zip(predictedValues, predictions, actual):
+	print(v, p, a)
 
 # Calculate F score on the cross-validation data
 tp = 0
@@ -88,14 +91,15 @@ for (pred, act) in zip(predictions, actual):
 			fn = fn + 1
 		else:
 			tn = tn + 1
+print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp)
 
-precision = tp / (tp + fp)
-recall = tp / (tp + fn)
+precision = tp / (tp + fp) if (tp + fp != 0) else 0
+recall = tp / (tp + fn) if (tp + fn != 0) else 0
 
-Fscore = 2*precision*recall/(precision + recall)
+Fscore = 2*precision*recall/(precision + recall) if (precision + recall != 0) else 0
 
-print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp, "\nprecision:", precision, "\nrecall:", recall, "\nF1 score:", Fscore)
-exit()
+print("precision:", precision, "\nrecall:", recall, "\nF1 score:", Fscore)
+
 # visualize the training progress
 plt.plot(list(range(1, E+1)), history.history['fbeta_score'], 'k', color='green')
 plt.plot(list(range(1, E+1)), history.history['loss'], 'k', color='blue')
