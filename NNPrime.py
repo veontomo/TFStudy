@@ -8,28 +8,47 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
+
+# Generqte input data
+# The input data is a list of integers with labels 0 (if the number is not a prime one) or 1 (if the number is a prime one).
+
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
 filename = dirName + '/primes_20000'
 file = open(filename, 'r')
-primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:200]))
+primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:1000]))
 file.close()
-print(primes[:20])
 
+isPrime = []
+
+minNum = primes[0]
 maxNum = primes[-1]
-print(maxNum)
+size = len(primes)
 
-randomIntegers = list(range(2, maxNum))
-random.shuffle(randomIntegers)
+isPrime = []
+
+for i in range(0, size - 1):
+	start = primes[i]
+	end = primes[i+1]
+	isPrime.append(1)
+	quantity = end - start - 1
+	if (quantity > 0):
+		isPrime.extend([0] * quantity)
+isPrime.append(1)
+
+shuffledIntegers = list(range(minNum, maxNum+1))
+random.shuffle(shuffledIntegers)
+dataY = list(map(lambda x: isPrime[x - minNum], shuffledIntegers))
+
 
 L = 6                    # dimension of the input vector
-M = len(randomIntegers)   # the number of available input data (training data + cross-check data + verification data)
+M = len(shuffledIntegers)           # the number of available input data (training data + cross-check data + verification data)
 N = 6*M // 10            # size of the training set
-E = 50   
+E = 10   
 
 
 def base(n):
-	"""Base-3 representation of number n"""
-	b = 3 # define the base
+	"""Base-10 representation of number n"""
+	b = 10 # define the base
 	r = n // b
 	if r == 0:
 		return [n]
@@ -42,18 +61,14 @@ def padding(l):
 	"""Pads given list to have a size L"""
 	return (L*[0] + l)[-L:]
 
-input = list(map(padding, map(base, randomIntegers)))
-labels = list(map(lambda x: 1 if (x in primes) else 0, randomIntegers))
+dataX = list(map(padding, map(base, shuffledIntegers)))
 
-for (i, x, y) in zip(randomIntegers, input, labels):
-	print("i:", i, "x:", x, "y:", y)
 
 
 
 # extract the first elements in order to use tham as a trainig set
-X_train = input[:N]
-Y_train = labels[:N]
-
+X_train = dataX[:N]
+Y_train = dataY[:N]
 
 model = Sequential()
 model.add(Dense(L, input_dim=L, activation='tanh'))
@@ -63,17 +78,17 @@ model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
 
-history = model.fit(input, labels, nb_epoch=E, batch_size=32, verbose= 0)
+history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose= 0)
 
 for layer in model.layers:
 	print(layer.get_weights())
 
-predictedValues = model.predict(input[N:])
+predictedValues = model.predict(dataX[N:])
 predictions = list(map(lambda x: 1 if (x > 0.5) else 0, predictedValues))
-actual = labels[N:]
+actual = dataY[N:]
 
-for (v, p, a) in zip(predictedValues, predictions, actual):
-	print(v, p, a)
+# for (v, p, a, n) in zip(predictedValues, predictions, actual, dataX[N:]):
+	# print(n, v, p, a)
 
 # Calculate F score on the cross-validation data
 tp = 0
@@ -104,7 +119,7 @@ print("precision:", precision, "\nrecall:", recall, "\nF1 score:", Fscore)
 plt.plot(list(range(1, E+1)), history.history['fbeta_score'], 'k', color='green')
 plt.plot(list(range(1, E+1)), history.history['loss'], 'k', color='blue')
 plt.xlabel('Epoch')
-plt.title('Training progress')
+plt.title('Prime number detection')
 
 loss_line = mlines.Line2D([], [], color='blue', label='loss')
 fscore_line = mlines.Line2D([], [], color='green', label='F1 score')
