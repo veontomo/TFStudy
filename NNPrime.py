@@ -1,6 +1,6 @@
 import os
 from keras.models import Sequential
-from keras.layers import Dense, Activation, LSTM
+from keras.layers import Dense, Activation, LSTM, TimeDistributed
 from keras.optimizers import SGD
 import random
 import math 
@@ -15,7 +15,7 @@ import matplotlib.lines as mlines
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
 filename = dirName + '/primes_20000'
 file = open(filename, 'r')
-primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:5000]))
+primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:100]))
 file.close()
 
 isPrime = []
@@ -71,14 +71,10 @@ X_train = dataX[:N]
 Y_train = dataY[:N]
 
 model = Sequential()
-model.add(TimeDistributed(Dense(8, input_dim=L, Activation='softmax')))
-model.add(LSTM(4, dropout_W=0.2, dropout_U=0.2))
-model.add(Dense(1))
-# model.add(Dense(2, input_dim=L, activation='tanh'))
-# model.add(SimpleRNN(1))
-# model.add(Dense(4, activation='sigmoid'))
-# model.add(Dense(1, activation='sigmoid'))
-# model.add(Dense(1, activation='sigmoid'))
+model.add(Dense(L, input_dim=L, activation='tanh'))
+model.add(Dense(4, activation='sigmoid'))
+model.add(Dense(3, activation='sigmoid'))
+model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
