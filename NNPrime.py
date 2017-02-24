@@ -1,6 +1,6 @@
 import os
 from keras.models import Sequential
-from keras.layers import Dense, Activation
+from keras.layers import Dense, Activation, LSTM
 from keras.optimizers import SGD
 import random
 import math 
@@ -15,7 +15,7 @@ import matplotlib.lines as mlines
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
 filename = dirName + '/primes_20000'
 file = open(filename, 'r')
-primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:1000]))
+primes = list(map(lambda str: int(str.replace('\n', '')), file.readlines()[:5000]))
 file.close()
 
 isPrime = []
@@ -43,7 +43,7 @@ dataY = list(map(lambda x: isPrime[x - minNum], shuffledIntegers))
 L = 6                    # dimension of the input vector
 M = len(shuffledIntegers)           # the number of available input data (training data + cross-check data + verification data)
 N = 6*M // 10            # size of the training set
-E = 10   
+E = 20   
 
 
 def base(n):
@@ -71,8 +71,13 @@ X_train = dataX[:N]
 Y_train = dataY[:N]
 
 model = Sequential()
-model.add(Dense(L, input_dim=L, activation='tanh'))
-model.add(Dense(1, activation='sigmoid'))
+model.add(TimeDistributed(Dense(8, input_dim=L, Activation='softmax')))
+model.add(LSTM(4, dropout_W=0.2, dropout_U=0.2))
+model.add(Dense(1))
+# model.add(Dense(2, input_dim=L, activation='tanh'))
+# model.add(SimpleRNN(1))
+# model.add(Dense(4, activation='sigmoid'))
+# model.add(Dense(1, activation='sigmoid'))
 # model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
