@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
-
+os.system('cls')
 # Generqte input data
 # The input data is a list of integers with labels 0 (if the number is not a prime one) or 1 (if the number is a prime one).
 
@@ -40,14 +40,14 @@ random.shuffle(shuffledIntegers)
 dataY = list(map(lambda x: isPrime[x - minNum], shuffledIntegers))
 
 
-L = 6                    # dimension of the input vector
+L = 5                    # dimension of the input vector
 M = len(shuffledIntegers)           # the number of available input data (training data + cross-check data + verification data)
 N = 6*M // 10            # size of the training set
-E = 20   
+E = 15   
 
 
 def base(n):
-	"""Base-10 representation of number n"""
+	"""Base-2 representation of number n"""
 	b = 10 # define the base
 	r = n // b
 	if r == 0:
@@ -70,33 +70,53 @@ dataX = list(map(padding, map(base, shuffledIntegers)))
 X_train = dataX[:N]
 Y_train = dataY[:N]
 
+print('X train:', X_train)
+print('Y train:', Y_train)
+
+print('the number of prime numbers in the training set:', sum(Y_train))
+
+# see this link for an example
+#  
+# https://github.com/fchollet/keras/issues/3107
+# 
+X_reshaped = np.reshape(X_train, (1, len(X_train), L), order='F')
+Y_reshaped = np.reshape(Y_train, (1, len(Y_train), 1), order='F')
+
+
 model = Sequential()
-model.add(Dense(L, input_dim=L, activation='tanh'))
-model.add(Dense(4, activation='sigmoid'))
-model.add(Dense(3, activation='sigmoid'))
-model.add(Dense(1, activation='sigmoid'))
+# model.add(Dense(L, input_dim=L, activation='sigmoid'))
+model.add(LSTM(2, input_shape=X_reshaped.shape[1:]))
+# model.add(Dense(1, activation='softmax'))
+
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
 
-history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose= 0)
+history = model.fit(X_reshaped, Y_reshaped, nb_epoch=E, batch_size=32, verbose= 0)
 
 for layer in model.layers:
 	print(layer.get_weights())
 
-predictedValues = model.predict(dataX[N:])
-predictions = list(map(lambda x: 1 if (x > 0.5) else 0, predictedValues))
-actual = dataY[N:]
+X_validation= dataX[N:]
+Y_validation = dataY[N:]
+Y_predicted_raw = model.predict(X_validation)
+Y_predicted = list(map(lambda x: 1 if (x > 0.14) else 0, Y_predicted_raw))
 
-# for (v, p, a, n) in zip(predictedValues, predictions, actual, dataX[N:]):
-	# print(n, v, p, a)
+print('the number of prime numbers in the validation set:', sum(Y_validation))
+print('Y_predicted: max ', max(Y_predicted_raw), 'min', min(Y_predicted_raw))
+
+for (i, v, p, a) in zip(shuffledIntegers, Y_predicted_raw, Y_predicted, Y_validation):
+	if (a == 1):
+		print(i, v, p, 'prime')
+	else:
+		print(i, v)
 
 # Calculate F score on the cross-validation data
 tp = 0
 tn = 0
 fp = 0
 fn = 0
-for (pred, act) in zip(predictions, actual):
+for (pred, act) in zip(Y_predicted, Y_validation):
 	if pred == 1: 
 		if act == 1:
 			tp = tp + 1
