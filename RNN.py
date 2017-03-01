@@ -8,12 +8,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
+from keras.utils.visualize_util import plot
+
+
 os.system('cls')
 
 LOW = 0
 HIGH = 127
 L = 8
-E = 5000
+E = 50
 TRAINING_SIZE = 100
 TOTAL_SIZE = 128
 raw = list(range(LOW, HIGH + 1))
@@ -61,11 +64,13 @@ Y = np.array(Ybase).reshape((-1, L, 1))
 # build the model: 2 stacked LSTM
 print('Build model...')
 model = Sequential()
-model.add(GRU(output_dim = 5, input_length = L, input_dim = 2, return_sequences = True, activation = 'tanh'))
+model.add(GRU(output_dim = L, input_length = L, input_dim = 2, return_sequences = True, activation = 'tanh'))
+model.add(Dense(L, activation='sigmoid'))
 model.add(TimeDistributed(Dense(2, activation='sigmoid')))
 model.add(Dense(1, activation='sigmoid'))
 # model.add(TimeDistributed(Dense(1, activation='sigmoid')))
 model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['fbeta_score']) 
+# plot(model, to_file='model.png')
 history = model.fit(X[:TRAINING_SIZE], Y[:TRAINING_SIZE], nb_epoch=E, batch_size=8, verbose= 0)
 model.summary()
 
