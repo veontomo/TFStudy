@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
 os.system('cls')
-# Generqte input data
+# Generate input data
 # The input data is a list of integers with labels 0 (if the number is not a prime one) or 1 (if the number is a prime one).
 
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
