@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
-from keras.utils.visualize_util import plot
+# from keras.utils.visualize_util import plot
 
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
 
@@ -70,9 +70,9 @@ model.add(TimeDistributed(Dense(2, activation='sigmoid')))
 model.add(Dense(1, activation='sigmoid'))
 model.add(TimeDistributed(Dense(1, activation='sigmoid')))
 model.compile(loss = 'binary_crossentropy', optimizer = 'adam', metrics = ['fbeta_score']) 
-plot(model, to_file= dirName + '/model_diagram.png')
-history = model.fit(X[:NUM_TRAIN_INPUTS], Y[:NUM_TRAIN_INPUTS], nb_epoch=E, batch_size=8, verbose= 0)
 model.summary()
+# plot(model, to_file= dirName + '/model_diagram.png')
+history = model.fit(X[:NUM_TRAIN_INPUTS], Y[:NUM_TRAIN_INPUTS], nb_epoch=E, batch_size=8, verbose= 0)
 
 
 
@@ -80,11 +80,12 @@ model.summary()
 
 for layer in model.layers:
 	print(layer.name, 'input shape', layer.input_shape, 'output shape', layer.output_shape)
+	print(layer.get_config())
 
 plt.plot(list(range(1, E+1)), history.history['fbeta_score'], 'k', color='green')
 plt.plot(list(range(1, E+1)), history.history['loss'], 'k', color='blue')
 plt.xlabel('Epoch')
-plt.title('Summing bits')
+plt.title('Binary addition')
 
 loss_line = mlines.Line2D([], [], color='blue', label='loss')
 fscore_line = mlines.Line2D([], [], color='green', label='F1 score')
