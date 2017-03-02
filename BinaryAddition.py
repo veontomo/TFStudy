@@ -17,7 +17,7 @@ os.system('cls')
 LOW = 0
 HIGH = 127
 L = 8
-E = 2
+E = 100
 NUM_TRAIN_INPUTS = 100
 NUM_TOTAL_INPUTS = 128
 raw = list(range(LOW, HIGH + 1))
@@ -64,8 +64,8 @@ Y = np.array(Ybase).reshape((-1, L, 1))
 
 print('Build model...')
 model = Sequential()
-model.add(LSTM(output_dim = 2*L, input_length = L, input_dim = 2, return_sequences = True, activation = 'tanh', name="analyzer"))
-model.add(Dense(L, activation='sigmoid'))
+model.add(LSTM(output_dim = 2*L, input_length = L, input_dim = 2, return_sequences = True, activation = 'linear', name="analyzer"))
+model.add(Dense(L, activation='linear'))
 model.add(TimeDistributed(Dense(2, activation='sigmoid')))
 model.add(Dense(1, activation='sigmoid'))
 model.add(TimeDistributed(Dense(1, activation='sigmoid')))
