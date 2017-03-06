@@ -36,24 +36,29 @@ os.system('cls')
 DATASET_SIZE = 1024
 INPUT_LEN = 9
 TRAINING_SIZE = 2 * DATASET_SIZE // 3
-E = 200
+E = 1000
 
 X = np.array(list(map(lambda i: padding(base(i, 2), INPUT_LEN), range(0, DATASET_SIZE)))).reshape((-1, 1, INPUT_LEN))
-Y = np.array(list(map(lambda x: sum(x[0]), X))).reshape((-1, 1, 1))
+Y = np.array(list(map(lambda x: INPUT_LEN - sum(x[0]), X))).reshape((-1, 1, 1))
 training = X[:TRAINING_SIZE]
 labels= Y[:TRAINING_SIZE]
 
 print('Build model...')
 model = Sequential()
+layer = Dense(1, activation = 'linear')
+dist = TimeDistributed(layer, input_shape=(1, INPUT_LEN))
+
 # model.add(GRU(output_dim = 1, input_length = 1, input_dim = INPUT_LEN, return_sequences = True, activation = 'linear', name="analyzer"))
-model.add(TimeDistributed(Dense(1, activation = 'linear'), input_shape=(1, INPUT_LEN)))
-# now model.output_shape == (None, 10, 8)
+model.add(dist)
 model.compile(loss = 'mean_squared_error', optimizer = 'adam', metrics = ['fbeta_score']) 
 model.summary()
-history = model.fit(training, labels, nb_epoch=E, batch_size=8, verbose= 0)
+history = model.fit(training, labels, nb_epoch = E, batch_size = 8, verbose = 0)
 
 Xverification = X[TRAINING_SIZE:]
 Yverification = Y[TRAINING_SIZE:]
+
+# w =[np.array(INPUT_LEN*[-1.0]).reshape(-1, INPUT_LEN, 1)[0], np.array([INPUT_LEN])]
+# dist.set_weights(w)
 
 prediction = model.predict(Xverification)
 for (x, y, p) in zip(Xverification, Yverification, prediction):
@@ -73,4 +78,4 @@ loss_line = mlines.Line2D([], [], color='blue', label='loss')
 fscore_line = mlines.Line2D([], [], color='green', label='F1 score')
 plt.legend(handles=[loss_line, fscore_line])
 
-plt.show()
+# plt.show()

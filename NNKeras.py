@@ -23,12 +23,12 @@ inputIntegers = list(range(M))
 random.shuffle(inputIntegers)
 
 def base(n):
-	"""Base-3 representation of number n"""
-	b = 2 # define the base
-	r = n // b
-	if r == 0:
-		return [n]
-	else: 
+    """Base-3 representation of number n"""
+    b = 2 # define the base
+    r = n // b
+    if r == 0:
+        return [n]
+    else:
 		rest = base(r)
 		rest.append(n % b)
 		return rest
