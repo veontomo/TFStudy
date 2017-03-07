@@ -12,10 +12,9 @@ from keras.utils import np_utils
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
 
 # load ascii text and covert to lowercase
-filename = dirName + "/wonderland.txt"
+filename = dirName + "/wonderland_full.txt"
 raw_text = open(filename).read()
 raw_text = raw_text.lower()
-
 # create mapping of unique chars to integers
 chars = sorted(list(set(raw_text)))
 char_to_int = dict((c, i) for i, c in enumerate(chars))
@@ -47,14 +46,14 @@ y = np_utils.to_categorical(dataY)
 
 # define the LSTM model
 model = Sequential()
-model.add(LSTM(256, input_shape=(X.shape[1], X.shape[2])))
+model.add(LSTM(32, input_shape=(X.shape[1], X.shape[2])))
 model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 
 
 # define the checkpoint
-filepath="weights-improvement-{epoch:02d}-{loss:.4f}.hdf5"
+filepath="weights/improvement-{epoch:02d}-{loss:.4f}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
