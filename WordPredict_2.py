@@ -60,12 +60,13 @@ model.add(LSTM(128, input_shape=(X.shape[1], X.shape[2])))
 model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation='softmax'))
 # load the network weights
-filename = dirName + "/weights-improvement-19-2.6673.hdf5"
+filename = dirName + "/weights/improvement-199-0.7716.hdf5"
 model.load_weights(filename)
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 # pick a random seed
 start = numpy.random.randint(0, len(dataX)-1)
 pattern = dataX[start]
+
 print("Seed:")
 print("\"", ''.join([int_to_char[value] for value in pattern]), "\"")
 # generate characters
