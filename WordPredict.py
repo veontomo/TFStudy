@@ -46,7 +46,7 @@ y = np_utils.to_categorical(dataY)
 
 # define the LSTM model
 model = Sequential()
-model.add(LSTM(32, input_shape=(X.shape[1], X.shape[2])))
+model.add(LSTM(128, input_shape=(X.shape[1], X.shape[2])))
 model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam')
@@ -57,7 +57,7 @@ filepath="weights/improvement-{epoch:02d}-{loss:.4f}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
-filename = dirName + "/weights/improvement-28-2.4627.hdf5"
-model.load_weights(filename)
+#filename = dirName + "/weights/improvement-28-2.4627.hdf5"
+#model.load_weights(filename)
 
-model.fit(X, y, nb_epoch=200, batch_size=32, callbacks=callbacks_list, initial_epoch = 29)
+model.fit(X, y, nb_epoch=200, batch_size=32, callbacks=callbacks_list, initial_epoch = 0)
