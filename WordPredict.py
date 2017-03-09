@@ -57,7 +57,7 @@ filepath="weights/improvement-{epoch:02d}-{loss:.4f}.hdf5"
 checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
 callbacks_list = [checkpoint]
 
-#filename = dirName + "/weights/improvement-28-2.4627.hdf5"
-#model.load_weights(filename)
+filename = dirName + "/weights_to_restore/improvement-10-2.2401.hdf5"
+model.load_weights(filename)
 
-model.fit(X, y, nb_epoch=200, batch_size=32, callbacks=callbacks_list, initial_epoch = 0)
+model.fit(X, y, nb_epoch=200, batch_size=32, callbacks=callbacks_list, initial_epoch = 10)
