@@ -12,7 +12,7 @@ import sys
 
 
 TIME_STEPS = 100
-NUM_UNITS = 32
+NUM_UNITS = 128
 
 
 # load ascii text and covert to lowercase
@@ -53,7 +53,7 @@ model.add(LSTM(NUM_UNITS, input_shape=(X.shape[1], X.shape[2])))
 model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation='softmax'))
 # load the network weights
-filename = dirName + "/weights/improvement-187-0.0278.hdf5"
+filename = dirName + "/weights/improvement-29-1.9994.hdf5"
 model.load_weights(filename)
 model.compile(loss='categorical_crossentropy', optimizer='adam')
 # pick a random seed
