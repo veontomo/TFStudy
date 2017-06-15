@@ -1,6 +1,7 @@
 #import os
 #import tensorflow as tf
 import re
+import numpy as np
 
 # Read the data into a list
 with open("train.csv", encoding="ascii") as file:
@@ -54,4 +55,12 @@ for i in range(1, len(list)):
     digitalized.append(tmpLine)
 
 
-print(digitalized)
+pos = [features.index("Pclass"),features.index("Sex"),features.index("Age"),features.index("SibSp"),features.index("Parch"),features.index("Ticket"),features.index("Fare"),features.index("Cabin"),features.index("Embarked")]
+
+# input data
+X = np.array(digitalized)[:, pos]
+# labels
+Y = np.array(digitalized)[:, features.index("Survived")]
+
+for (x, y) in zip(X, Y):
+    print(x[2], y)
