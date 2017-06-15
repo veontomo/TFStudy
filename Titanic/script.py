@@ -2,6 +2,10 @@
 #import tensorflow as tf
 import re
 import numpy as np
+from keras.models import Sequential
+from keras.layers import Dense, Activation
+from keras.optimizers import SGD
+
 
 # Read the data into a list
 with open("train.csv", encoding="ascii") as file:
@@ -55,12 +59,53 @@ for i in range(1, len(list)):
     digitalized.append(tmpLine)
 
 
-pos = [features.index("Pclass"),features.index("Sex"),features.index("Age"),features.index("SibSp"),features.index("Parch"),features.index("Ticket"),features.index("Fare"),features.index("Cabin"),features.index("Embarked")]
+pos = [features.index("Pclass"),features.index("Sex"),features.index("Age"),features.index("SibSp"),features.index("Parch"), features.index("Fare"), features.index("Embarked")]
 
 # input data
-X = np.array(digitalized)[:, pos]
+dataX = np.array(digitalized)[:, pos]
 # labels
-Y = np.array(digitalized)[:, features.index("Survived")]
+dataY = np.array(digitalized)[:, features.index("Survived")]
 
-for (x, y) in zip(X, Y):
-    print(x[2], y)
+L = len(pos)
+N = int(0.8 * len(dataY))
+print(N)
+
+model = Sequential()
+model.add(Dense(L, input_dim=L, activation='tanh'))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(optimizer='rmsprop',
+              loss='binary_crossentropy',
+              metrics=['fbeta_score'])
+
+history = model.fit(dataX, dataY, nb_epoch=10, batch_size=32, verbose=0)
+
+for layer in model.layers:
+    print(layer.get_weights())
+
+predictions = list(map(lambda x: 1 if (x > 0.5) else 0, model.predict(dataX[N:])))
+actual = dataY[N:]
+
+# Calculate F score on the cross-validation data
+tp = 0
+tn = 0
+fp = 0
+fn = 0
+for (pred, act) in zip(predictions, actual):
+    if pred == 1:
+        if act == 1:
+            tp += 1
+        else:
+            fp += 1
+    else:
+        if act == 1:
+            fn += 1
+        else:
+            tn += 1
+
+precision = tp / (tp + fp)
+recall = tp / (tp + fn)
+
+Fscore = 2 * precision * recall / (precision + recall)
+
+print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp, "\nprecision:",
+      precision, "\nrecall:", recall, "\nF1 score:", Fscore)
