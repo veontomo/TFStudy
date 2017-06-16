@@ -66,9 +66,15 @@ dataX = np.array(digitalized)[:, pos]
 # labels
 dataY = np.array(digitalized)[:, features.index("Survived")]
 
+
+
 L = len(pos)
 N = int(0.8 * len(dataY))
 print(N)
+
+X_train = dataX[:N]
+Y_train = dataY[:N]
+
 
 model = Sequential()
 model.add(Dense(L, input_dim=L, activation='tanh'))
@@ -77,13 +83,14 @@ model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
 
-history = model.fit(dataX, dataY, nb_epoch=10, batch_size=32, verbose=0)
+history = model.fit(X_train, Y_train, nb_epoch=10, batch_size=32, verbose=0)
 
 for layer in model.layers:
     print(layer.get_weights())
 
-predictions = list(map(lambda x: 1 if (x > 0.5) else 0, model.predict(dataX[N:])))
+predictions = map(lambda x: 1 if (x > 0.5) else 0, model.predict(dataX[N:]))
 actual = dataY[N:]
+
 
 # Calculate F score on the cross-validation data
 tp = 0

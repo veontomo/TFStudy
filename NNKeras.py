@@ -23,6 +23,7 @@ inputIntegers = list(range(M))
 random.shuffle(inputIntegers)
 
 
+
 def base(n):
     """Base-3 representation of number n"""
     b = 2  # define the base
@@ -51,6 +52,8 @@ def getLabel(n):
 dataBase = list(map(base, inputIntegers))
 dataX = list(map(padding, dataBase))
 dataY = list(map(getLabel, inputIntegers))
+print(dataX)
+print(dataY)
 
 # for i in range(N):
 # print(inputIntegers[i], " X =", dataX[i], " Y =", dataY[i])
@@ -67,7 +70,7 @@ model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
 
-history = model.fit(dataX, dataY, nb_epoch=E, batch_size=32, verbose=0)
+history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
 
 for layer in model.layers:
     print(layer.get_weights())
