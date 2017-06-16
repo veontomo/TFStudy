@@ -60,7 +60,7 @@ for i in range(1, len(list)):
     digitalized.append(tmpLine)
 
 
-pos = [features.index("Pclass"),features.index("Sex"),features.index("Age"),features.index("SibSp"),features.index("Parch"), features.index("Fare"), features.index("Embarked")]
+pos = [features.index("Pclass"), features.index("Sex"), features.index("Age"), features.index("SibSp"), features.index("Parch"), features.index("Fare"), features.index("Cabin"), features.index("Embarked")]
 
 # input data
 dataX = np.array(digitalized)[:, pos]
@@ -71,15 +71,15 @@ dataY = np.array(digitalized)[:, features.index("Survived")]
 
 L = len(pos)
 N = int(0.8 * len(dataY))
-E = 100
-print(N)
+E = 200
 
 X_train = dataX[:N]
 Y_train = dataY[:N]
 
 
 model = Sequential()
-model.add(Dense(L, input_dim=L, activation='tanh'))
+model.add(Dense(L, input_dim=L, activation='sigmoid'))
+model.add(Dense(L, activation='sigmoid'))
 model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
