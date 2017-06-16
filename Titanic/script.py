@@ -5,7 +5,8 @@ import numpy as np
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from keras.optimizers import SGD
-
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 
 # Read the data into a list
 with open("train.csv", encoding="ascii") as file:
@@ -70,6 +71,7 @@ dataY = np.array(digitalized)[:, features.index("Survived")]
 
 L = len(pos)
 N = int(0.8 * len(dataY))
+E = 100
 print(N)
 
 X_train = dataX[:N]
@@ -83,7 +85,7 @@ model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
 
-history = model.fit(X_train, Y_train, nb_epoch=10, batch_size=32, verbose=0)
+history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
 
 for layer in model.layers:
     print(layer.get_weights())
@@ -109,10 +111,32 @@ for (pred, act) in zip(predictions, actual):
         else:
             tn += 1
 
-precision = tp / (tp + fp)
-recall = tp / (tp + fn)
+print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp)
 
-Fscore = 2 * precision * recall / (precision + recall)
+denom1 = tp + fp
+denom2 = tp + fn
+if denom1!= 0:
+    precision = tp / denom1
+    print("precision:", precision)
+else:
+    precision = -1
+if denom2 != 0:
+    recall = tp / denom2
+    print("recall:", recall)
+else:
+    recall = -1
+if (recall != -1) and (precision != -1):
+    Fscore = 2 * precision * recall / (precision + recall)
+    print("F1 score:", Fscore)
 
-print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp, "\nprecision:",
-      precision, "\nrecall:", recall, "\nF1 score:", Fscore)
+# visualize the training progress
+plt.plot(range(1, E + 1), history.history['fbeta_score'], 'k', color='green')
+plt.plot(range(1, E + 1), history.history['loss'], 'k', color='blue')
+plt.xlabel('Epoch')
+plt.title('Training progress')
+
+loss_line = mlines.Line2D([], [], color='blue', label='loss')
+fscore_line = mlines.Line2D([], [], color='green', label='F1 score')
+plt.legend(handles=[loss_line, fscore_line])
+
+plt.show()
