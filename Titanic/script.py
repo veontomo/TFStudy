@@ -20,25 +20,30 @@ intFeatures = ["PassengerId", "Survived", "Pclass", "SibSp", "Parch"]
 # features that should be treated as floats
 floatFeatures = ["Age", "Fare"]
 
-feature_values = [[] for i in range(0, len(features)) ]
+feature_values = {key: [] for key in features }
+
+
 
 # iterate over the data set in order to collect all possible feature values
 for i in range(1, len(list)):
     line = re.split(",(?!\s)", list[i].strip())
     for k in range(0, len(line)):
-        if features[k] in intFeatures:
+        featureName = features[k]
+        if featureName in intFeatures:
             value = int(line[k])
-        elif features[k] in floatFeatures:
+        elif featureName in floatFeatures:
             if line[k] != '':
                 value = float(line[k])
             else:
                 value = -1
         else:
             value = line[k]
-        if not(value in feature_values[k]):
-            feature_values[k].append(value)
-            feature_values[k].sort()
+        if not(value in feature_values[featureName]):
+            feature_values[featureName].append(value)
+            feature_values[featureName].sort()
 
+print(feature_values)
+exit()
 
 # indexed version of the data set (in order to avoid strings) 
 digitalized = []
