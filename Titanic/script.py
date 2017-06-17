@@ -30,48 +30,69 @@ def cabin(str):
         return ["", int(part1)]
     return ["", 0]
 
+
+def extract_title(str):
+    pattern = ".*?,\s+(.*?)\."
+    if re.match(pattern, str):
+        res = re.search(pattern, str)
+        return res.group(1)
+    print("Title not found in", str)
+    return ""
+
 # Read the data into a list
 with open("train.csv", encoding="ascii") as file:
     list = file.readlines()
 
 # First element of the list contains the feature names
 orig_features = list[0].strip().split(",")
-generated_features = orig_features[:]
-generated_features.append("Deck")
-generated_features.append("CabinNumber")
+constructed_features = orig_features[:]
+constructed_features.append("Deck")
+constructed_features.append("CabinNumber")
+constructed_features.append("Title")
 
 # features that should be treated as integers
 intFeatures = ["PassengerId", "Survived", "Pclass", "SibSp", "Parch"]
 # features that should be treated as floats
 floatFeatures = ["Age", "Fare"]
 
-feature_values = {key: [] for key in generated_features}
+feature_values = {key: [] for key in constructed_features}
+
+missing_features = {key: 0 for key in orig_features}
 
 # iterate over the data set in order to collect all possible feature values
 for i in range(1, len(list)):
     line = re.split(",(?!\s)", list[i].strip())
     for k in range(0, len(line)):
         featureName = orig_features[k]
+        value = line[k]
+        if value == "":
+            missing_features[orig_features[k]] += 1
         if featureName == "Cabin":
-            values = cabin(line[k])
-            if not(values[0] in feature_values["Deck"]):
-                feature_values["Deck"].append(values[0])
+            cabin_pair = cabin(value)
+            if not(cabin_pair[0] in feature_values["Deck"]):
+                feature_values["Deck"].append(cabin_pair[0])
                 feature_values["Deck"].sort()
-            if not(values[1] in feature_values["CabinNumber"]):
-                feature_values["CabinNumber"].append(values[1])
+            if not(cabin_pair[1] in feature_values["CabinNumber"]):
+                feature_values["CabinNumber"].append(cabin_pair[1])
                 feature_values["CabinNumber"].sort()
+        if featureName == "Name":
+            title = extract_title(value)
+            if not(title in feature_values["Title"]):
+                feature_values["Title"].append(title)
         if featureName in intFeatures:
-            value = int(line[k])
+            cast_value = int(value)
         elif featureName in floatFeatures:
-            if line[k] != '':
-                value = float(line[k])
+            if value != '':
+                cast_value = float(value)
             else:
-                value = -1
+                cast_value = -1
         else:
-            value = line[k]
-        if not(value in feature_values[featureName]):
-            feature_values[featureName].append(value)
+            cast_value = value
+        if not(cast_value in feature_values[featureName]):
+            feature_values[featureName].append(cast_value)
             feature_values[featureName].sort()
+
+print("missing features", missing_features)
 
 # indexed version of the data set (in order to avoid strings)
 digitalized = []
@@ -79,36 +100,47 @@ digitalized = []
 for i in range(1, len(list)):
     tmpLine = []
     tmpCabin = []
+    titleIndex = -1
     line = re.split(",(?!\s)", list[i].strip())
     for k in range(0, len(line)):
         if orig_features[k] in intFeatures:
-            value = int(line[k])
+            cast_value = int(line[k])
         elif orig_features[k] in floatFeatures:
             if line[k] != '':
-                value = float(line[k])
+                cast_value = float(line[k])
             else:
-                value = -1
+                cast_value = -1
         else:
-            value = line[k]
-        tmpLine.append(feature_values[orig_features[k]].index(value))
+            cast_value = line[k]
+        tmpLine.append(feature_values[orig_features[k]].index(cast_value))
         if orig_features[k] == "Cabin":
-            values = cabin(line[k])
-            tmpCabin.append(feature_values["Deck"].index(values[0]))
-            tmpCabin.append(feature_values["CabinNumber"].index(values[1]))
+            cabin_pair = cabin(line[k])
+            tmpCabin.append(feature_values["Deck"].index(cabin_pair[0]))
+            tmpCabin.append(feature_values["CabinNumber"].index(cabin_pair[1]))
+        if orig_features[k] == "Name":
+            title = extract_title(line[k])
+            titleIndex = feature_values["Title"].index(title)
+    if titleIndex < 0:
+        print("in line n.", i, "title", title, "is not found")
     tmpLine.append(tmpCabin[0])
     tmpLine.append(tmpCabin[1])
+    tmpLine.append(titleIndex)
     digitalized.append(tmpLine)
 
-#pos = [orig_features.index("Pclass"), orig_features.index("Sex"), orig_features.index("Age"), orig_features.index("SibSp"), orig_features.index("Parch"), orig_features.index("Fare"), orig_features.index("Cabin"), orig_features.index("Embarked")]
-pos = [generated_features.index(key) for key in ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked", "Deck", "CabinNumber"]]
+pos = [constructed_features.index(key) for key in
+       ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked", "Deck", "CabinNumber", "Title"]]
 # input data
 dataX = np.array(digitalized)[:, pos]
 # labels
-dataY = np.array(digitalized)[:, generated_features.index("Survived")]
+dataY = np.array(digitalized)[:, constructed_features.index("Survived")]
 
 L = len(pos)
 N = int(0.8 * len(dataY))
 E = 500
+
+print("number of features", L)
+print("number of training data", N)
+print("number of epochs", E)
 
 X_train = dataX[:N]
 Y_train = dataY[:N]
@@ -116,7 +148,7 @@ Y_train = dataY[:N]
 
 model = Sequential()
 model.add(Dense(L, input_dim=L, activation='sigmoid'))
-model.add(Dense(L, activation='sigmoid'))
+model.add(Dense(2*L, activation='tanh'))
 model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
