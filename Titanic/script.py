@@ -3,10 +3,11 @@
 import re
 import numpy as np
 from keras.models import Sequential
-from keras.layers import Dense, Activation
+from keras.layers import Dense, Activation, Conv1D
 from keras.optimizers import SGD
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
+
 
 def cabin(str):
     """Split the cabin number into a string and an integer"""
@@ -145,11 +146,16 @@ print("number of epochs", E)
 X_train = dataX[:N]
 Y_train = dataY[:N]
 
+X_test = dataX[N:]
+Y_test = dataY[N:]
+
+print("Test data size", len(X_test))
+
 
 model = Sequential()
 model.add(Dense(L, input_dim=L, activation='sigmoid'))
-model.add(Dense(2*L, activation='tanh'))
-model.add(Dense(1, activation='sigmoid'))
+model.add(Conv1D(filters=1, kernel_size=2, strides=2, input_dim=L, filter_length=2, kernel_initializer= 'uniform',
+                  activation= 'relu'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
@@ -181,6 +187,7 @@ for (pred, act) in zip(predictions, actual):
             tn += 1
 
 print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp)
+print(tp, "+", tn, "+", fn, "+", fp, "=" if tp + fp + fn + tn == len(X_test) else "<>", len(X_test))
 
 denom1 = tp + fp
 denom2 = tp + fn
