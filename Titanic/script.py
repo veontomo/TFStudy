@@ -149,13 +149,16 @@ Y_train = dataY[:N]
 X_test = dataX[N:]
 Y_test = dataY[N:]
 
+print(X_train[1])
+print(Y_train[1])
+
 print("Test data size", len(X_test))
 
 
 model = Sequential()
-model.add(Dense(L, input_dim=L, activation='sigmoid'))
-model.add(Conv1D(filters=1, kernel_size=2, strides=2, input_dim=L, filter_length=2, kernel_initializer= 'uniform',
-                  activation= 'relu'))
+model.add(Dense(L, input_dim=L, activation='relu'))
+#model.add(Conv1D(filters=1, kernel_size=2, strides=2, input_dim=L, filter_length=2, kernel_initializer= 'uniform',
+#                  activation= 'relu'))
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
