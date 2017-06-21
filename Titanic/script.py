@@ -8,6 +8,7 @@ from keras.optimizers import SGD
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
+from sklearn import ensemble
 
 def cabin(str):
     """Split the cabin number into a string and an integer"""
@@ -149,7 +150,12 @@ Y_train = dataY[:N]
 X_test = dataX[N:]
 Y_test = dataY[N:]
 
+#
+# http://slides.com/simonescardapane/machine-learning-from-a-developer-s-pov#/7
+rf = ensemble.RandomForestClassifier().fit(X_train, Y_train)
+print('Predicted league is:', rf.predict(X_test))
 
+exit()
 model = Sequential()
 model.add(Dense(L, input_dim=L, activation='linear', init='normal'))
 model.add(Dense(1, activation='sigmoid', init='normal'))
