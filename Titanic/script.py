@@ -137,7 +137,7 @@ dataY = np.array(digitalized)[:, constructed_features.index("Survived")]
 
 L = len(pos)
 N = int(0.8 * len(dataY))
-E = 500
+E = 200
 
 print("number of features", L)
 print("number of training data", N)
@@ -149,19 +149,19 @@ Y_train = dataY[:N]
 X_test = dataX[N:]
 Y_test = dataY[N:]
 
-print(X_train[1])
-print(Y_train[1])
-
-print("Test data size", len(X_test))
-
 
 model = Sequential()
-model.add(Dense(L, input_dim=L, activation='relu'))
-#model.add(Conv1D(filters=1, kernel_size=2, strides=2, input_dim=L, filter_length=2, kernel_initializer= 'uniform',
-#                  activation= 'relu'))
-model.compile(optimizer='rmsprop',
+model.add(Dense(L, input_dim=L, activation='linear', init='normal'))
+model.add(Dense(1, activation='sigmoid', init='normal'))
+#model.add(Dense(1, init='normal', activation='relu'))
+model.compile(optimizer='RMSprop',
               loss='binary_crossentropy',
               metrics=['fbeta_score'])
+
+
+#model.add(Dense(60, input_dim=60, init='normal', activation='relu'))
+#model.add(Dense(1, init='normal', activation='sigmoid'))
+#model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
 history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
 
