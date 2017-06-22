@@ -10,6 +10,52 @@ import matplotlib.lines as mlines
 
 from sklearn import ensemble
 
+def F1Score(actual, prediction):
+    if len(actual) != len(prediction):
+        print("Predicted and actual lists must be of equal length")
+        return -1
+    # Calculate F score on the cross-validation data
+    tp = 0
+    tn = 0
+    fp = 0
+    fn = 0
+    for (pred, act) in zip(prediction, actual):
+        if pred == 1:
+            if act == 1:
+                tp += 1
+            else:
+                fp += 1
+        else:
+            if act == 1:
+                fn += 1
+            else:
+                tn += 1
+
+    #print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp)
+    if tp + tn + fp + fn != len(actual):
+        print('Partition to true/false positive/negative went wrong')
+        return -1
+    #print(tp, "+", tn, "+", fn, "+", fp, "=" if tp + fp + fn + tn == len(X_test) else "<>", len(X_test))
+
+    denom1 = tp + fp
+    denom2 = tp + fn
+    if denom1!= 0:
+        precision = tp / denom1
+     #   print("precision:", precision)
+    else:
+        precision = -1
+    if denom2 != 0:
+        recall = tp / denom2
+    #    print("recall:", recall)
+    else:
+        recall = -1
+    if (recall != -1) and (precision != -1):
+        Fscore = 2 * precision * recall / (precision + recall)
+    else:
+        Fscore = -1
+    return Fscore
+
+
 def cabin(str):
     """Split the cabin number into a string and an integer"""
     if str == "":
@@ -130,7 +176,7 @@ for i in range(1, len(list)):
     digitalized.append(tmpLine)
 
 pos = [constructed_features.index(key) for key in
-       ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked", "Deck", "CabinNumber", "Title"]]
+       ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked", "Deck", "Title"]]
 # input data
 dataX = np.array(digitalized)[:, pos]
 # labels
@@ -152,67 +198,47 @@ Y_test = dataY[N:]
 
 #
 # http://slides.com/simonescardapane/machine-learning-from-a-developer-s-pov#/7
-rf = ensemble.RandomForestClassifier().fit(X_train, Y_train)
-print('Predicted league is:', rf.predict(X_test))
+rf = ensemble.RandomForestClassifier(n_estimators=10).fit(X_train, Y_train)
+predictions = rf.predict(X_test)
 
-exit()
-model = Sequential()
-model.add(Dense(L, input_dim=L, activation='linear', init='normal'))
-model.add(Dense(1, activation='sigmoid', init='normal'))
-#model.add(Dense(1, init='normal', activation='relu'))
-model.compile(optimizer='RMSprop',
-              loss='binary_crossentropy',
-              metrics=['fbeta_score'])
+Fscore = F1Score(Y_test, predictions)
+
+EstimRange = range(1, 50)
+
+plot1 = [F1Score(Y_test, ensemble.RandomForestClassifier(n_estimators=i,  criterion='gini', max_features=4).fit(X_train, Y_train).predict(X_test)) for i in EstimRange]
+maxValue = max(plot1)
+maxPos = plot1.index(maxValue)
+print(1, maxValue, 'at', maxPos)
+plt.plot(EstimRange, plot1, color='blue')
+plt.show()
+
+
+exit();
+
+print('Prediction', predictions)
+print('Actual', Y_test)
+#exit()
+#model = Sequential()
+#model.add(Dense(L, input_dim=L, activation='linear', init='normal'))
+#model.add(Dense(1, activation='sigmoid', init='normal'))
+##model.add(Dense(1, init='normal', activation='relu'))
+#model.compile(optimizer='RMSprop',
+#              loss='binary_crossentropy',
+#              metrics=['fbeta_score'])
 
 
 #model.add(Dense(60, input_dim=60, init='normal', activation='relu'))
 #model.add(Dense(1, init='normal', activation='sigmoid'))
 #model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
 
-history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
+#history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
 
-for layer in model.layers:
-    print(layer.get_weights())
+#for layer in model.layers:
+    #print(layer.get_weights())
 
-predictions = map(lambda x: 1 if (x > 0.5) else 0, model.predict(dataX[N:]))
-actual = dataY[N:]
+#predictions = map(lambda x: 1 if (x > 0.5) else 0, model.predict(X_train))
+actual = Y_test
 
-
-# Calculate F score on the cross-validation data
-tp = 0
-tn = 0
-fp = 0
-fn = 0
-for (pred, act) in zip(predictions, actual):
-    if pred == 1:
-        if act == 1:
-            tp += 1
-        else:
-            fp += 1
-    else:
-        if act == 1:
-            fn += 1
-        else:
-            tn += 1
-
-print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp)
-print(tp, "+", tn, "+", fn, "+", fp, "=" if tp + fp + fn + tn == len(X_test) else "<>", len(X_test))
-
-denom1 = tp + fp
-denom2 = tp + fn
-if denom1!= 0:
-    precision = tp / denom1
-    print("precision:", precision)
-else:
-    precision = -1
-if denom2 != 0:
-    recall = tp / denom2
-    print("recall:", recall)
-else:
-    recall = -1
-if (recall != -1) and (precision != -1):
-    Fscore = 2 * precision * recall / (precision + recall)
-    print("F1 score:", Fscore)
 
 # visualize the training progress
 plt.plot(range(1, E + 1), history.history['fbeta_score'], 'k', color='green')
