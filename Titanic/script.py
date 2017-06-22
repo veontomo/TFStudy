@@ -2,9 +2,9 @@
 #import tensorflow as tf
 import re
 import numpy as np
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Conv1D
-from keras.optimizers import SGD
+#from keras.models import Sequential
+#from keras.layers import Dense, Activation, Conv1D
+#from keras.optimizers import SGD
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 
@@ -203,13 +203,13 @@ predictions = rf.predict(X_test)
 
 Fscore = F1Score(Y_test, predictions)
 
-EstimRange = range(1, 50)
+interval = range(1, L + 1)
 
-plot1 = [F1Score(Y_test, ensemble.RandomForestClassifier(n_estimators=i,  criterion='gini', max_features=4).fit(X_train, Y_train).predict(X_test)) for i in EstimRange]
+plot1 = [ensemble.RandomForestClassifier(n_estimators=L,  criterion='gini', max_features=i, max_depth=None, min_impurity_split=1e-08).fit(X_train, Y_train).score(X_test, Y_test) for i in interval]
 maxValue = max(plot1)
 maxPos = plot1.index(maxValue)
 print(1, maxValue, 'at', maxPos)
-plt.plot(EstimRange, plot1, color='blue')
+plt.plot(interval, plot1, color='blue')
 plt.show()
 
 
