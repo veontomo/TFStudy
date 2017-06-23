@@ -14,7 +14,6 @@ def castToInt(v, d):
     try:
         return int(v)
     except Exception as e:
-        print(e)
         return d
 
 intFieldNamesAsString = "Id, MSSubClass, LotFrontage, LotArea, OverallQual, OverallCond, YearBuilt, YearRemodAdd, \
@@ -24,7 +23,17 @@ intFieldNamesAsString = "Id, MSSubClass, LotFrontage, LotArea, OverallQual, Over
     PoolArea, MiscVal, MoSold, YrSold"
 intFieldNames = re.split(",\s*", intFieldNamesAsString)
 intFieldPositions = [title.index(k) for k in intFieldNames]
-print(intFieldPositions)
+
+
+strFieldNamesAsString = "MSZoning, Street, Alley, LotShape, LandContour, \
+    Utilities, LotConfig, LandSlope, Neighborhood, Condition1, Condition2, \
+    BldgType, HouseStyle, RoofStyle, RoofMatl, Exterior1st, Exterior2nd, \
+    MasVnrType, ExterQual, ExterCond, Foundation, BsmtQual, BsmtCond, \
+    BsmtExposure, BsmtFinType1, BsmtFinType2, Heating, HeatingQC, CentralAir, \
+    Electrical, Functional, FireplaceQu, GarageType, GarageFinish, GarageQual, \
+    GarageCond, PavedDrive, PoolQC, Fence, MiscFeature, SaleType, SaleCondition"
+strFieldNames = re.split(",\s*", strFieldNamesAsString)
+strFieldPositions = [title.index(k) for k in strFieldNames]
 
 def applyTo(arr, pos, mapper):
     """ Return a new array from arr by applying mapper to elements of arr whose position indicies are in pos.
@@ -51,22 +60,44 @@ def index(featureNames, data):
             featureValue = line[i]
             if not(featureValue in output[featureName]):
                 output[featureName].append(featureValue)
+                output[featureName].sort()
     return output
 
-result = index(title, valuesCast)
+def digitalize(featureNames, featureValues, featureIndex, indexedPositions):
+    result = []
+    for i in range(0, len(featureValues)):
+        line = []
+        for k in range(0, len(featureValues[i])):
+            featureName = featureNames[k]
+            featureValue = featureValues[i][k]
+            if k in indexedPositions:
+                line.append(featureIndex[featureName].index(featureValue))
+            else:
+                line.append(featureValue)
+        result.append(line)
+    return result
+
+
+dataIndex = index(title, valuesCast)
+digitalized = digitalize(title, valuesCast, dataIndex, strFieldPositions )
+print(digitalized)
+
+exit()
 frequency = {}
 dataSize = len(values)
-for key in result:
-    l = len(result[key])
+for key in dataIndex:
+    l = len(dataIndex[key])
     p = int(l/dataSize * 10000) / 100
-    print(key, l, p)
     frequency[key] = p
 
 frequency_sorted = sorted(frequency.items(), key=operator.itemgetter(1))
-treshold = 0.0
+threshold = 0.0
 
 for key in frequency_sorted:
     if key[0] == 'Id':
         continue
-    if key[1] > treshold:
-        print(key[0], key[1], result[key[0]], '\n')
+    if key[1] > threshold:
+        print(key[0], key[1], dataIndex[key[0]], '\n')
+
+for k, v in zip(title, values[5]):
+    print(k, v)
