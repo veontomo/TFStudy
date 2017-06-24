@@ -1,9 +1,11 @@
-import csv
-import operator
 import re
 import numpy as np
-from sklearn import ensemble
-
+from keras.models import Sequential
+from keras.layers import Dense, Activation
+from keras.optimizers import SGD
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
+import random
 
 # Read the data into a list
 with open("train.csv", encoding="ascii") as file:
@@ -12,12 +14,14 @@ with open("train.csv", encoding="ascii") as file:
 title = [v.strip() for v in list[0].split(",")]
 values = [v.strip().split(",") for v in list[1:]]
 
+
 def castToInt(v, d):
     """Converts the first arg into an integer. In case of failure, the second argument is to be returned"""
     try:
         return int(v)
     except Exception as e:
         return d
+
 
 intFieldNamesAsString = "Id, MSSubClass, LotFrontage, LotArea, OverallQual, OverallCond, YearBuilt, YearRemodAdd, \
     MasVnrArea, BsmtFinSF1, BsmtFinSF2, BsmtUnfSF, TotalBsmtSF, 1stFlrSF, 2ndFlrSF, LowQualFinSF, GrLivArea, \
@@ -26,7 +30,6 @@ intFieldNamesAsString = "Id, MSSubClass, LotFrontage, LotArea, OverallQual, Over
     PoolArea, MiscVal, MoSold, YrSold, SalePrice"
 intFieldNames = re.split(",\s*", intFieldNamesAsString)
 intFieldPositions = [title.index(k) for k in intFieldNames]
-
 
 strFieldNamesAsString = "MSZoning, Street, Alley, LotShape, LandContour, \
     Utilities, LotConfig, LandSlope, Neighborhood, Condition1, Condition2, \
@@ -37,6 +40,7 @@ strFieldNamesAsString = "MSZoning, Street, Alley, LotShape, LandContour, \
     GarageCond, PavedDrive, PoolQC, Fence, MiscFeature, SaleType, KitchenQual, SaleCondition"
 strFieldNames = re.split(",\s*", strFieldNamesAsString)
 strFieldPositions = [title.index(k) for k in strFieldNames]
+
 
 def applyTo(arr, pos, mapper):
     """ Return a new array from arr by applying mapper to elements of arr whose position indicies are in pos.
@@ -61,20 +65,42 @@ def index(featureNames, data):
         for i in range(0, len(line)):
             featureName = featureNames[i]
             featureValue = line[i]
-            if not(featureValue in output[featureName]):
+            if not (featureValue in output[featureName]):
                 output[featureName].append(featureValue)
                 output[featureName].sort()
     return output
 
-def digitalize(featureNames, featureValues, featureIndex, indexedPositions):
+
+def digitalize(featureNames, featureValues, featureIndex, positions):
     result = []
     for i in range(0, len(featureValues)):
         line = []
         for k in range(0, len(featureValues[i])):
             featureName = featureNames[k]
             featureValue = featureValues[i][k]
-            if k in indexedPositions:
+            if k in positions:
                 line.append(featureIndex[featureName].index(featureValue))
+            else:
+                line.append(featureValue)
+        result.append(line)
+    return result
+
+def scale(x, a, b, A, B):
+    """Return value to which x is mapped provided the interval (a, b) is lenearly mapped to (A, B)"""
+    return ((B - A)*x + (A*b - B*a))/(b-a)
+
+def normalize(featureNames, featureValues, featureIndex, positions):
+    result = []
+    for i in range(0, len(featureValues)):
+        line = []
+        for k in range(0, len(featureValues[i])):
+            featureName = featureNames[k]
+            featureValue = featureValues[i][k]
+            if k in positions:
+                b1 = min(featureIndex[featureName])
+                b2 = max(featureIndex[featureName])
+                norm = scale(featureValue, b1, b2, 0, 1)
+                line.append(norm)
             else:
                 line.append(featureValue)
         result.append(line)
@@ -83,15 +109,24 @@ def digitalize(featureNames, featureValues, featureIndex, indexedPositions):
 
 dataIndex = index(title, valuesCast)
 
-digitalized = digitalize(title, valuesCast, dataIndex, strFieldPositions )
-dataX = np.array(digitalized)[:, :-1]
-# labels
-dataY = np.array(digitalized)[:, -1]
+digitalized = digitalize(title, valuesCast, dataIndex, strFieldPositions)
 
+dataIndex2 = index(title, digitalized)
+
+dataNorm = normalize(title, digitalized, dataIndex2, intFieldPositions)
+
+labelColIndex = title.index("SalePrice")
+dataColIndexes = [i for i in range(0, len(title)) if not(title[i] in ["Id", "GarageYrBlt", "SalePrice"])]
+
+dataX = np.array(dataNorm)[:, dataColIndexes]
+dataY = np.array(dataNorm)[:, [labelColIndex]]
+# generate fake random data
+#dataX = np.array([[random.random() for i in range(0, 3)] for k in range(0, 15)])
+#dataY = dataX[:, -1]
 
 F = len(dataX[0])
 T = int(0.8 * len(dataX))
-E = 200
+E = 500
 
 print("number of features", F)
 print("number of training data", T)
@@ -125,55 +160,32 @@ print("number of cross validation", CV)
 # for k, v in zip(title, values[5]):
 #     print(k, v)
 
-def F1Score(actual, prediction):
-    if len(actual) != len(prediction):
-        print("Predicted and actual lists must be of equal length")
-        return -1
-    # Calculate F score on the cross-validation data
-    tp = 0
-    tn = 0
-    fp = 0
-    fn = 0
-    for (pred, act) in zip(prediction, actual):
-        if pred == 1:
-            if act == 1:
-                tp += 1
-            else:
-                fp += 1
-        else:
-            if act == 1:
-                fn += 1
-            else:
-                tn += 1
+model = Sequential()
+model.add(Dense(1, input_dim=F, activation='sigmoid'))
+# model.add(Dense(1, activation='sigmoid'))
+model.compile(optimizer='rmsprop',
+              loss='mean_absolute_percentage_error',
+              metrics=['mae'])
 
-    #print("true positive:", tp, "\ntrue negative:", tn, "\nfalse negative:", fn, "\nfalse positive:", fp)
-    if tp + tn + fp + fn != len(actual):
-        print('Partition to true/false positive/negative went wrong')
-        return -1
-    #print(tp, "+", tn, "+", fn, "+", fp, "=" if tp + fp + fn + tn == len(X_test) else "<>", len(X_test))
+history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
+predictions = model.predict(X_cv)
 
-    denom1 = tp + fp
-    denom2 = tp + fn
-    if denom1!= 0:
-        precision = tp / denom1
-     #   print("precision:", precision)
-    else:
-        precision = -1
-    if denom2 != 0:
-        recall = tp / denom2
-    #    print("recall:", recall)
-    else:
-        recall = -1
-    if (recall != -1) and (precision != -1):
-        Fscore = 2 * precision * recall / (precision + recall)
-    else:
-        Fscore = -1
-    return Fscore
+for layer in model.layers:
+    print(layer.get_weights())
 
+for p, a in zip(predictions, Y_cv):
+    print(p, a, (p-a)/a)
+# visualize the training progress
 
-rf = ensemble.RandomForestClassifier(n_estimators=10).fit(X_train, Y_train)
-predictions = rf.predict(X_cv)
+COLOR_LOSS = 'blue'
+COLOR_ACC = 'green'
+# plt.plot(range(1, E + 1), history.history['mae'], 'k', color=COLOR_ACC)
+plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_LOSS)
+plt.xlabel('Epoch')
+plt.title('Training progress')
 
-Fscore = F1Score(Y_cv, predictions)
+line1 = mlines.Line2D([], [], color=COLOR_LOSS, label='loss')
+# line2 = mlines.Line2D([], [], color=COLOR_ACC, label='accuracy')
+plt.legend(handles=[line1])
 
-print('F1 score =', Fscore)
+plt.show()
