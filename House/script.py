@@ -15,6 +15,7 @@ with open("train.csv", encoding="ascii") as file:
 
 title = [v.strip() for v in list[0].split(",")]
 values = [v.strip().split(",") for v in list[1:]]
+print("There are", len(title), "features: ", title)
 
 
 def castToInt(v, d):
@@ -111,28 +112,16 @@ def normalize(featureNames, featureValues, featureIndex, positions):
     return result
 
 
-dataIndex = index(title, valuesCast)
-
-digitalized = digitalize(title, valuesCast, dataIndex, strFieldPositions)
-
-dataIndex2 = index(title, digitalized)
-
-dataNorm = normalize(title, digitalized, dataIndex2, intFieldPositions)
-
-labelColIndex = title.index("SalePrice")
-dataColIndexes = [i for i in range(0, len(title)) if not (title[i] in ["Id", "GarageYrBlt", "SalePrice"])]
-
-dataX = np.array(dataNorm)[:, dataColIndexes]
-dataY = np.array(dataNorm)[:, [labelColIndex]]
-
-
-def deviation(lst):
+def sigma(lst):
+    """Standard deviation: sqrt(E[X^2] - E[X]^2)"""
     size = len(lst)
     avg = sum(lst) / size
     return math.sqrt(sum([x * x for x in lst]) / size - avg * avg)
 
 
 def corr(lst1, lst2):
+    """Correlation btw two variables. The lists of the variable values must be
+    of equal length."""
     size = len(lst1)
     if size != len(lst2):
         return Exception('Both list must be of the same length.')
@@ -141,23 +130,41 @@ def corr(lst1, lst2):
     lst0 = []
     for x, y in zip(lst1, lst2):
         lst0.append((x - avg1) * (y - avg2))
-    return sum(lst0) / size / deviation(lst1) / deviation(lst2)
+    return sum(lst0) / size / sigma(lst1) / sigma(lst2)
 
-corrList = {title[i]: corr(dataX[:, i], dataY[:, 0]) for i in range(0, len(dataX[0, :]))}
-frequency_sorted = sorted(corrList.items(), key=operator.itemgetter(1))
 
-threshold = 0.0
-for key in frequency_sorted:
-    print(key[0], key[1])
+dataIndex = index(title, valuesCast)
 
-exit()
-# generate fake random data
-# dataX = np.array([[random.random() for i in range(0, 3)] for k in range(0, 15)])
-# dataY = dataX[:, -1]
+digitalized = digitalize(title, valuesCast, dataIndex, strFieldPositions)
 
-F = len(dataX[0])
+dataIndex2 = index(title, digitalized)
+
+dataNorm = np.array(normalize(title, digitalized, dataIndex2, intFieldPositions))
+
+labelColIndex = title.index("SalePrice")
+
+corrList2 = {title[i]: corr(dataNorm[:, i], dataNorm[:, labelColIndex]) for i in range(0, len(title)) if
+             i != labelColIndex}
+
+# pick up only those features whose abs value of the correlation with the label is greater than the threshold
+threshold = 0.1
+
+dataColIndexes = [title.index(t) for t in corrList2 if math.fabs(corrList2[t]) > threshold]
+ignoredFeatures = [t for t in corrList2 if math.fabs(corrList2[t]) <= threshold]
+print(len(dataColIndexes), "features are taken into consideration:", [title[i] for i in dataColIndexes])
+print(len(ignoredFeatures), "features are to ignored:", ignoredFeatures)
+
+#frequency_sorted = sorted(corrList2.items(), key=operator.itemgetter(1))
+# for key in frequency_sorted:
+#    print(key[0], key[1])
+
+dataX = dataNorm[:, dataColIndexes]
+dataY = dataNorm[:, [labelColIndex]]
+print(dataNorm[:, 1])
+
+F = len(dataColIndexes)
 T = int(0.8 * len(dataX))
-E = 500
+E = 1000
 
 print("number of features", F)
 print("number of training data", T)
@@ -192,11 +199,15 @@ print("number of cross validation", CV)
 #     print(k, v)
 
 model = Sequential()
-model.add(Dense(1, input_dim=F, activation='sigmoid'))
+model.add(Dense(F, input_dim=F, activation='sigmoid'))
+model.add(Dense(F, activation='sigmoid'))
+model.add(Dense(F, activation='softmax'))
+model.add(Dense(1, activation='sigmoid'))
+
 # model.add(Dense(1, activation='sigmoid'))
 model.compile(optimizer='rmsprop',
-              loss='mean_absolute_percentage_error',
-              metrics=['mae'])
+              loss='mean_absolute_error',
+              metrics=['accuracy'])
 
 history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
 predictions = model.predict(X_cv)
@@ -205,7 +216,8 @@ for layer in model.layers:
     print(layer.get_weights())
 
 for p, a in zip(predictions, Y_cv):
-    print(p, a, (p - a) / a)
+    diff = int(math.fabs(10000*(1-p[0]/a[0])))/100
+    print(p[0], a[0], diff, "%")
 # visualize the training progress
 
 COLOR_LOSS = 'blue'
