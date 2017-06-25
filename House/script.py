@@ -6,6 +6,8 @@ from keras.optimizers import SGD
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import random
+import math
+import operator
 
 # Read the data into a list
 with open("train.csv", encoding="ascii") as file:
@@ -85,9 +87,11 @@ def digitalize(featureNames, featureValues, featureIndex, positions):
         result.append(line)
     return result
 
+
 def scale(x, a, b, A, B):
     """Return value to which x is mapped provided the interval (a, b) is lenearly mapped to (A, B)"""
-    return ((B - A)*x + (A*b - B*a))/(b-a)
+    return ((B - A) * x + (A * b - B * a)) / (b - a)
+
 
 def normalize(featureNames, featureValues, featureIndex, positions):
     result = []
@@ -116,13 +120,40 @@ dataIndex2 = index(title, digitalized)
 dataNorm = normalize(title, digitalized, dataIndex2, intFieldPositions)
 
 labelColIndex = title.index("SalePrice")
-dataColIndexes = [i for i in range(0, len(title)) if not(title[i] in ["Id", "GarageYrBlt", "SalePrice"])]
+dataColIndexes = [i for i in range(0, len(title)) if not (title[i] in ["Id", "GarageYrBlt", "SalePrice"])]
 
 dataX = np.array(dataNorm)[:, dataColIndexes]
 dataY = np.array(dataNorm)[:, [labelColIndex]]
+
+
+def deviation(lst):
+    size = len(lst)
+    avg = sum(lst) / size
+    return math.sqrt(sum([x * x for x in lst]) / size - avg * avg)
+
+
+def corr(lst1, lst2):
+    size = len(lst1)
+    if size != len(lst2):
+        return Exception('Both list must be of the same length.')
+    avg1 = sum(lst1) / size
+    avg2 = sum(lst2) / size
+    lst0 = []
+    for x, y in zip(lst1, lst2):
+        lst0.append((x - avg1) * (y - avg2))
+    return sum(lst0) / size / deviation(lst1) / deviation(lst2)
+
+corrList = {title[i]: corr(dataX[:, i], dataY[:, 0]) for i in range(0, len(dataX[0, :]))}
+frequency_sorted = sorted(corrList.items(), key=operator.itemgetter(1))
+
+threshold = 0.0
+for key in frequency_sorted:
+    print(key[0], key[1])
+
+exit()
 # generate fake random data
-#dataX = np.array([[random.random() for i in range(0, 3)] for k in range(0, 15)])
-#dataY = dataX[:, -1]
+# dataX = np.array([[random.random() for i in range(0, 3)] for k in range(0, 15)])
+# dataY = dataX[:, -1]
 
 F = len(dataX[0])
 T = int(0.8 * len(dataX))
@@ -174,7 +205,7 @@ for layer in model.layers:
     print(layer.get_weights())
 
 for p, a in zip(predictions, Y_cv):
-    print(p, a, (p-a)/a)
+    print(p, a, (p - a) / a)
 # visualize the training progress
 
 COLOR_LOSS = 'blue'
