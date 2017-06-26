@@ -1,6 +1,7 @@
 import re
 import numpy as np
 from keras.models import Sequential
+from keras.callbacks import Callback
 from keras.layers import Dense, Activation
 from keras.optimizers import SGD
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ import matplotlib.lines as mlines
 import random
 import math
 import operator
+from keras import metrics
 
 # Read the data into a list
 with open("train.csv", encoding="ascii") as file:
@@ -132,6 +134,18 @@ def corr(lst1, lst2):
         lst0.append((x - avg1) * (y - avg2))
     return sum(lst0) / size / sigma(lst1) / sigma(lst2)
 
+lossAccum = []
+class TestCallback(Callback):
+    def __init__(self, test_data):
+        self.test_data = test_data
+
+    def on_epoch_end(self, epoch, logs={}):
+        x, y = self.test_data
+        predicted = self.model.predict(x, verbose=0)
+        diff = [predicted[i] - y[i] for i in range(0, len(y))]
+        sq = sum([math.fabs(x) for x in diff]) / len(y)
+        lossAccum.append(sq)
+
 
 dataIndex = index(title, valuesCast)
 
@@ -154,30 +168,26 @@ ignoredFeatures = [t for t in corrList2 if math.fabs(corrList2[t]) <= threshold]
 print(len(dataColIndexes), "features are taken into consideration:", [title[i] for i in dataColIndexes])
 print(len(ignoredFeatures), "features are to ignored:", ignoredFeatures)
 
-#frequency_sorted = sorted(corrList2.items(), key=operator.itemgetter(1))
+# frequency_sorted = sorted(corrList2.items(), key=operator.itemgetter(1))
 # for key in frequency_sorted:
 #    print(key[0], key[1])
 
 dataX = dataNorm[:, dataColIndexes]
 dataY = dataNorm[:, [labelColIndex]]
-print(dataNorm[:, 1])
 
 F = len(dataColIndexes)
 T = int(0.8 * len(dataX))
-E = 1000
-
-print("number of features", F)
-print("number of training data", T)
-print("number of epochs", E)
+E = 50
 
 X_train = dataX[:T]
 Y_train = dataY[:T]
-
 X_cv = dataX[T:]
 Y_cv = dataY[T:]
 
-CV = len(X_cv)
-print("number of cross validation", CV)
+print("number of features", F)
+print("number of test data", T)
+print("number of cross validation data", len(X_cv))
+print("number of epochs", E)
 
 # frequency = {}
 # dataSize = len(values)
@@ -198,37 +208,34 @@ print("number of cross validation", CV)
 # for k, v in zip(title, values[5]):
 #     print(k, v)
 
+
 model = Sequential()
 model.add(Dense(F, input_dim=F, activation='sigmoid'))
 model.add(Dense(F, activation='sigmoid'))
 model.add(Dense(F, activation='softmax'))
 model.add(Dense(1, activation='sigmoid'))
 
-# model.add(Dense(1, activation='sigmoid'))
-model.compile(optimizer='rmsprop',
+model.compile(optimizer='sgd',
               loss='mean_absolute_error',
               metrics=['accuracy'])
 
-history = model.fit(X_train, Y_train, nb_epoch=E, batch_size=32, verbose=0)
-predictions = model.predict(X_cv)
+history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0, callbacks=[TestCallback((X_cv, Y_cv))])
+# for layer in model.layers:
+#    print(layer.get_weights())
 
-for layer in model.layers:
-    print(layer.get_weights())
-
-for p, a in zip(predictions, Y_cv):
-    diff = int(math.fabs(10000*(1-p[0]/a[0])))/100
-    print(p[0], a[0], diff, "%")
 # visualize the training progress
 
-COLOR_LOSS = 'blue'
-COLOR_ACC = 'green'
-# plt.plot(range(1, E + 1), history.history['mae'], 'k', color=COLOR_ACC)
-plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_LOSS)
+COLOR_TRAIN = 'blue'
+COLOR_CV = 'green'
+#print(history.history.keys())
+plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
+plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
 plt.xlabel('Epoch')
 plt.title('Training progress')
 
-line1 = mlines.Line2D([], [], color=COLOR_LOSS, label='loss')
-# line2 = mlines.Line2D([], [], color=COLOR_ACC, label='accuracy')
-plt.legend(handles=[line1])
+lineLegend = []
+lineLegend.append(mlines.Line2D([], [], color=COLOR_TRAIN, label='train loss'))
+lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation loss'))
+plt.legend(handles=lineLegend)
 
 plt.show()
