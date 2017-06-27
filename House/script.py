@@ -2,7 +2,7 @@ import re
 import numpy as np
 from keras.models import Sequential
 from keras.callbacks import Callback
-from keras.layers import Dense, Activation
+from keras.layers import Dense, Activation, Dropout
 from keras.optimizers import SGD
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
@@ -161,7 +161,7 @@ corrList2 = {title[i]: corr(dataNorm[:, i], dataNorm[:, labelColIndex]) for i in
              i != labelColIndex}
 
 # pick up only those features whose abs value of the correlation with the label is greater than the threshold
-threshold = 0.1
+threshold = 0.01
 
 dataColIndexes = [title.index(t) for t in corrList2 if math.fabs(corrList2[t]) > threshold]
 ignoredFeatures = [t for t in corrList2 if math.fabs(corrList2[t]) <= threshold]
@@ -177,7 +177,7 @@ dataY = dataNorm[:, [labelColIndex]]
 
 F = len(dataColIndexes)
 T = int(0.8 * len(dataX))
-E = 50
+E = 200
 
 X_train = dataX[:T]
 Y_train = dataY[:T]
@@ -210,12 +210,12 @@ print("number of epochs", E)
 
 
 model = Sequential()
-model.add(Dense(F, input_dim=F, activation='sigmoid'))
-model.add(Dense(F, activation='sigmoid'))
+model.add(Dense(F, input_dim=F, activation='tanh'))
+#model.add(Dropout(1.0))
 model.add(Dense(F, activation='softmax'))
 model.add(Dense(1, activation='sigmoid'))
 
-model.compile(optimizer='sgd',
+model.compile(optimizer='rmsprop',
               loss='mean_absolute_error',
               metrics=['accuracy'])
 
