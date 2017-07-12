@@ -5,10 +5,10 @@ from keras.models import Sequential
 from keras.callbacks import Callback
 from keras.layers import Dense, Activation, Dropout
 import matplotlib.lines as mlines
-import keras.objectives as losses
+import math
 
 with open("train.csv", encoding="ascii") as file:
-    lst = [next(file) for x in range(0, 100)]
+    lst = [next(file) for x in range(0, 42000)]
 
 title = [v.strip() for v in lst[0].split(",")]
 data = [[int(i) for i in v.strip().split(",")] for v in lst[1:]]
@@ -27,6 +27,11 @@ E = 20
 #plt.imshow(np.reshape(X[1], [28, 28]), cmap='gray')
 #plt.show()
 
+def binary_crossentropy(X, Y):
+    num = X.shape[0] * X.shape[1]
+    return -sum([sum([math.log(1 - math.fabs(x)) for x in z]) for z in X-Y])/num
+
+
 lossAccum = []
 class TestCallback(Callback):
     def __init__(self, test_data):
@@ -35,7 +40,7 @@ class TestCallback(Callback):
     def on_epoch_end(self, epoch, logs={}):
         x, y = self.test_data
         predicted = self.model.predict(x, verbose=0)
-        l = losses.binary_crossentropy(y, predicted)
+        l = binary_crossentropy(y, predicted)
         lossAccum.append(l)
 
 X_train = X[:T]
@@ -51,7 +56,7 @@ print("number of epochs", E)
 
 
 model = Sequential()
-model.add(Dense(F, input_dim=F, activation='tanh'))
+model.add(Dense(2*F, input_dim=F, activation='tanh'))
 model.add(Dense(F, activation='softmax'))
 model.add(Dense(M, activation='sigmoid'))
 
