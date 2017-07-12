@@ -41,6 +41,7 @@ class TestCallback(Callback):
         x, y = self.test_data
         predicted = self.model.predict(x, verbose=0)
         l = binary_crossentropy(y, predicted)
+        print('Epoch', epoch + 1, 'loss', l) 
         lossAccum.append(l)
 
 X_train = X[:T]
@@ -56,8 +57,7 @@ print("number of epochs", E)
 
 
 model = Sequential()
-model.add(Dense(2*F, input_dim=F, activation='tanh'))
-model.add(Dense(F, activation='softmax'))
+model.add(Dense(F, input_dim=F, activation='tanh'))
 model.add(Dense(M, activation='sigmoid'))
 
 model.compile(optimizer='rmsprop',
