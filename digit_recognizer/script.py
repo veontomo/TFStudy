@@ -7,10 +7,10 @@ from keras.layers import Dense, Activation, Dropout
 import matplotlib.lines as mlines
 import math
 
+E = 50  # number of epochs
+FRACTION = 0.8  # fraction of initial data to be used for cross-validation
+LINE_NUMBERS = 200  # number of lines to read from 'train.csv'
 
-E = 5 # number of epoches
-FRACTION = 0.8 # fraction of initial data to be used for cross-validation
-LINE_NUMBERS = 200 # number of lines to read from 'train.csv'
 
 def mod(x):
     return math.fabs(x)
@@ -47,13 +47,13 @@ M = Ysoft.shape[1]  # dim of the output vector
 T = int(FRACTION * X.shape[0])  # number of train input vectors
 
 
-
 def binary_crossentropy(X, Y):
     num = X.shape[0] * X.shape[1]
     return -sum([sum([math.log(1 - math.fabs(x)) for x in z]) for z in X - Y]) / num
 
 
 lossAccum = []
+weightHistory = []
 
 
 class TestCallback(Callback):
@@ -62,6 +62,7 @@ class TestCallback(Callback):
 
     def on_epoch_end(self, epoch, logs={}):
         x, y = self.test_data
+        weightHistory.append(self.model.layers[0].get_weights()[0][0])
         predicted = self.model.predict(x, verbose=0)
         l = loss(y, predicted)
         print('Epoch', epoch + 1, 'loss', l)
@@ -100,36 +101,53 @@ for h in range(0, len(X_cv)):
     digitAct = np.argmax(Y_cv[[h]])
     if digitAct != digitPred:
         wrongPred[h] = [digitAct, digitPred]
-        print('confused', digitAct, 'with', digitPred)
+# print('confused', digitAct, 'with', digitPred)
 
 wrongPredSize = len(wrongPred)
 plotRows = int(math.ceil(math.sqrt(wrongPredSize)))
-if plotRows*plotRows < wrongPredSize:
+if plotRows * plotRows < wrongPredSize:
     plotRows = plotRows + 1
 
-counter = 0
-for h in wrongPred:
-    plt.subplot(plotRows+1, plotRows, counter + 1)
-    plt.title(str(wrongPred[h][1]) + ' ' + str(wrongPred[h][0]))
-    plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
+# counter = 0
+# for h in wrongPred:
+#     plt.subplot(plotRows+1, plotRows, counter + 1)
+#     plt.title(str(wrongPred[h][1]) + ' ' + str(wrongPred[h][0]))
+#     plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
+#     plt.axis('off')
+#     counter = counter + 1
+# print('Total amount of erroneus labels:', counter)
+# plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
+#
+#
+# COLOR_TRAIN = 'blue'
+# COLOR_CV = 'green'
+# plt.subplot(plotRows+1, 1, plotRows+1)
+# plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
+# plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
+# plt.xlabel('Epoch')
+# plt.title('Training progress')
+#
+# lineLegend = []
+# lineLegend.append(mlines.Line2D([], [], color=COLOR_TRAIN, label='train loss'))
+# lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation loss'))
+# plt.legend(handles=lineLegend)
+#
+# plt.show()
+
+layerNum = 1
+for layer in model.layers:
+    weights = layer.get_weights()
+    weightNum = 1
+    for w in weights:
+        print('layer n. ', layerNum, 'weight matrix n.', weightNum)
+        print(w.shape)
+        weightNum = weightNum + 1
+        layerNum = layerNum + 1
+
+counter = 1
+for w in weightHistory:
+    plt.subplot(5, (E // 5) + 1, counter)
+    plt.imshow(np.reshape(w, [28, 28]), cmap='gray')
     plt.axis('off')
     counter = counter + 1
-print('Total amount of erroneus labels:', counter)
-plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
-
-
-COLOR_TRAIN = 'blue'
-COLOR_CV = 'green'
-plt.subplot(plotRows+1, 1, plotRows+1)
-plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
-plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
-plt.xlabel('Epoch')
-plt.title('Training progress')
-
-lineLegend = []
-lineLegend.append(mlines.Line2D([], [], color=COLOR_TRAIN, label='train loss'))
-lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation loss'))
-plt.legend(handles=lineLegend)
-
 plt.show()
-
