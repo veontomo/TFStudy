@@ -8,6 +8,13 @@ import matplotlib.lines as mlines
 import math
 
 
+def f(t):
+    return np.exp(-t) * np.cos(2*np.pi*t)
+
+t1 = np.arange(0.0, 5.0, 0.1)
+t2 = np.arange(0.0, 5.0, 0.02)
+
+
 def mod(x):
     return math.fabs(x)
 
@@ -41,7 +48,7 @@ Ysoft = np.array([[1 if (i == y) else 0 for i in range(0, 10)] for y in Y])
 F = X.shape[1]  # dim of the input vector (number of features)
 M = Ysoft.shape[1]  # dim of the output vector
 T = int(0.8 * X.shape[0])  # number of train input vectors
-E = 10
+E = 200
 
 
 def binary_crossentropy(X, Y):
@@ -87,15 +94,31 @@ model.compile(optimizer='rmsprop',
 history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0, callbacks=[TestCallback((X_cv, Y_cv))])
 # for layer in model.layers:
 #    print(layer.get_weights())
-h = 13
-pickElem = X_cv[[h]]
-predict = model.predict(pickElem)
-print('predicted', predict)
-print('it is', Y_cv[[h]])
-print('is it', np.argmax(predict), '?')
+wrongPred = {}
+for h in range(0, len(X_cv)):
+    pickElem = X_cv[[h]]
+    predict = model.predict(pickElem)
+    digitPred = np.argmax(predict)
+    digitAct = np.argmax(Y_cv[[h]])
+    if digitAct != digitPred:
+        wrongPred[h] = [digitAct, digitPred]
+        print('confused', digitAct, 'with', digitPred)
 
-plt.imshow(np.reshape(pickElem, [28, 28]), cmap='gray')
+wrongPredSize = len(wrongPred)
+plotRows = int(math.ceil(math.sqrt(wrongPredSize)))
+if plotRows*plotRows < wrongPredSize:
+    plotRows = plotRows + 1
+
+counter = 0
+for h in wrongPred:
+    plt.subplot(plotRows, plotRows, counter + 1)
+    plt.title(wrongPred[h][1])
+    plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
+    plt.axis('off')
+    counter = counter + 1
+plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
 plt.show()
+
 
 COLOR_TRAIN = 'blue'
 COLOR_CV = 'green'
@@ -110,3 +133,4 @@ lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation 
 plt.legend(handles=lineLegend)
 
 plt.show()
+
