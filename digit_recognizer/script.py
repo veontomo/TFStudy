@@ -8,6 +8,10 @@ import matplotlib.lines as mlines
 import math
 
 
+E = 5 # number of epoches
+FRACTION = 0.8 # fraction of initial data to be used for cross-validation
+LINE_NUMBERS = 200 # number of lines to read from 'train.csv'
+
 def mod(x):
     return math.fabs(x)
 
@@ -28,7 +32,7 @@ def loss(x, y):
 
 
 with open("train.csv", encoding="ascii") as file:
-    lst = [next(file) for x in range(0, 420)]
+    lst = [next(file) for x in range(0, LINE_NUMBERS)]
 
 title = [v.strip() for v in lst[0].split(",")]
 data = [[int(i) for i in v.strip().split(",")] for v in lst[1:]]
@@ -40,8 +44,8 @@ Ysoft = np.array([[1 if (i == y) else 0 for i in range(0, 10)] for y in Y])
 
 F = X.shape[1]  # dim of the input vector (number of features)
 M = Ysoft.shape[1]  # dim of the output vector
-T = int(0.8 * X.shape[0])  # number of train input vectors
-E = 200
+T = int(FRACTION * X.shape[0])  # number of train input vectors
+
 
 
 def binary_crossentropy(X, Y):
@@ -77,6 +81,7 @@ print("number of epochs", E)
 
 model = Sequential()
 model.add(Dense(F, input_dim=F, activation='tanh'))
+model.add(Dense(M, activation='relu'))
 model.add(Dense(M, activation='sigmoid'))
 
 model.compile(optimizer='rmsprop',
@@ -104,17 +109,18 @@ if plotRows*plotRows < wrongPredSize:
 
 counter = 0
 for h in wrongPred:
-    plt.subplot(plotRows, plotRows, counter + 1)
-    plt.title(wrongPred[h][1])
+    plt.subplot(plotRows+1, plotRows, counter + 1)
+    plt.title(str(wrongPred[h][1]) + ' ' + str(wrongPred[h][0]))
     plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
     plt.axis('off')
     counter = counter + 1
+print('Total amount of erroneus labels:', counter)
 plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
-plt.show()
 
 
 COLOR_TRAIN = 'blue'
 COLOR_CV = 'green'
+plt.subplot(plotRows+1, 1, plotRows+1)
 plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
 plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
 plt.xlabel('Epoch')
