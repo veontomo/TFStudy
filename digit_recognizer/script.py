@@ -7,7 +7,7 @@ from keras.layers import Dense, Activation, Dropout
 import matplotlib.lines as mlines
 import math
 
-E = 50  # number of epochs
+E = 100  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for cross-validation
 LINE_NUMBERS = 200  # number of lines to read from 'train.csv'
 
@@ -54,7 +54,7 @@ def binary_crossentropy(X, Y):
 
 lossAccum = []
 weightHistory = []
-
+bias0 = []
 
 class TestCallback(Callback):
     def __init__(self, test_data):
@@ -63,6 +63,7 @@ class TestCallback(Callback):
     def on_epoch_end(self, epoch, logs={}):
         x, y = self.test_data
         weightHistory.append(self.model.layers[0].get_weights()[0][0])
+        bias0.append(self.model.layers[0].get_weights()[0][1])
         predicted = self.model.predict(x, verbose=0)
         l = loss(y, predicted)
         print('Epoch', epoch + 1, 'loss', l)
@@ -117,22 +118,22 @@ if plotRows * plotRows < wrongPredSize:
 #     counter = counter + 1
 # print('Total amount of erroneus labels:', counter)
 # plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
-#
-#
-# COLOR_TRAIN = 'blue'
-# COLOR_CV = 'green'
-# plt.subplot(plotRows+1, 1, plotRows+1)
-# plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
-# plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
-# plt.xlabel('Epoch')
-# plt.title('Training progress')
-#
-# lineLegend = []
-# lineLegend.append(mlines.Line2D([], [], color=COLOR_TRAIN, label='train loss'))
-# lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation loss'))
-# plt.legend(handles=lineLegend)
-#
-# plt.show()
+
+
+COLOR_TRAIN = 'blue'
+COLOR_CV = 'green'
+plt.subplot(plotRows+1, 1, plotRows+1)
+plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
+plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
+plt.xlabel('Epoch')
+plt.title('Training progress')
+
+lineLegend = []
+lineLegend.append(mlines.Line2D([], [], color=COLOR_TRAIN, label='train loss'))
+lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation loss'))
+plt.legend(handles=lineLegend)
+
+plt.show()
 
 layerNum = 1
 for layer in model.layers:
@@ -144,10 +145,26 @@ for layer in model.layers:
         weightNum = weightNum + 1
         layerNum = layerNum + 1
 
+# show input weight evolution
+# counter = 1
+# for w in weightHistory:
+#     plt.subplot(5, (E // 5) + 1, counter)
+#     plt.imshow(np.reshape(w, [28, 28]), cmap='gray')
+#     plt.axis('off')
+#     counter = counter + 1
+# plt.show()
+
+# show input bias evolution
 counter = 1
-for w in weightHistory:
-    plt.subplot(5, (E // 5) + 1, counter)
-    plt.imshow(np.reshape(w, [28, 28]), cmap='gray')
-    plt.axis('off')
-    counter = counter + 1
+historyCounter = 0
+historyStep = 10
+for w in bias0:
+    historyCounter = historyCounter + 1
+    if historyCounter == historyStep:
+        plt.subplot(5, (E // (5 * historyStep)) + 1, counter)
+        plt.imshow(np.reshape(w, [28, 28]), cmap='gray')
+        plt.axis('off')
+        counter = counter + 1
+        historyCounter = 0
+
 plt.show()
