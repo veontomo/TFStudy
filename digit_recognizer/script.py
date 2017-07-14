@@ -1,11 +1,14 @@
 import numpy as np
 
 import matplotlib.pyplot as plt
+from keras.constraints import maxnorm
 from keras.models import Sequential
 from keras.callbacks import Callback
-from keras.layers import Dense, Activation, Dropout
+from keras.layers import Dense, Activation, Dropout, Conv2D
 import matplotlib.lines as mlines
 import math
+
+from keras.utils import np_utils
 
 E = 100  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for cross-validation
@@ -40,10 +43,13 @@ data = [[int(i) for i in v.strip().split(",")] for v in lst[1:]]
 X = np.array(data)[:, 1:]
 Y = np.array(data)[:, 0]
 
-Ysoft = np.array([[1 if (i == y) else 0 for i in range(0, 10)] for y in Y])
+
+Ycateg = np_utils.to_categorical(Y)
+Ximg = np.array([np.reshape(x, [28, 28]) for x in X ])
+print(Ximg.shape)
 
 F = X.shape[1]  # dim of the input vector (number of features)
-M = Ysoft.shape[1]  # dim of the output vector
+M = Ycateg.shape[1]  # dim of the output vector
 T = int(FRACTION * X.shape[0])  # number of train input vectors
 
 
@@ -71,9 +77,9 @@ class TestCallback(Callback):
 
 
 X_train = X[:T]
-Y_train = Ysoft[:T]
+Y_train = Ycateg[:T]
 X_cv = X[T:]
-Y_cv = Ysoft[T:]
+Y_cv = Ycateg[T:]
 
 print("number of features", F)
 print("output dimension", M)
@@ -82,9 +88,8 @@ print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
 model = Sequential()
-model.add(Dense(F, input_dim=F, activation='tanh'))
-model.add(Dense(M, activation='relu'))
-model.add(Dense(M, activation='sigmoid'))
+model.add(Conv2D(28, (4, 4), input_shape=(None, 28, 28), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
+model.add(Dense(10, activation='softmax'))
 
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
