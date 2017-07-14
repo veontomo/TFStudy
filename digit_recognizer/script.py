@@ -157,14 +157,15 @@ for layer in model.layers:
 # show input bias evolution
 counter = 1
 historyCounter = 0
-historyStep = 10
-for w in bias0:
-    historyCounter = historyCounter + 1
-    if historyCounter == historyStep:
-        plt.subplot(5, (E // (5 * historyStep)) + 1, counter)
-        plt.imshow(np.reshape(w, [28, 28]), cmap='gray')
-        plt.axis('off')
-        counter = counter + 1
-        historyCounter = 0
+maxPlotNum = 40
+if E > maxPlotNum:
+    historyStep = E // maxPlotNum
+else:
+    historyStep = 1
+for w in bias0[::historyStep]:
+    plt.subplot((maxPlotNum // 5) + 2, 5, counter)
+    plt.imshow(np.reshape(w, [28, 28]), cmap='gray')
+    plt.axis('off')
+    counter = counter + 1
 
 plt.show()
