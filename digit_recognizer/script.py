@@ -13,9 +13,9 @@ from keras.utils import np_utils
 
 # print(keras.__version__)
 # exit()
-E = 100  # number of epochs
-FRACTION = 0.8  # fraction of initial data to be used for cross-validation
-LINE_NUMBERS = 200  # number of lines to read from 'train.csv'
+E = 50  # number of epochs
+FRACTION = 0.8  # fraction of initial data to be used for training. The rest - for the cross-validation
+LINE_NUMBERS = 420  # number of lines to read from 'train.csv'
 
 
 def mod(x):
@@ -91,7 +91,7 @@ print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
 model = Sequential()
-model.add(Conv2D(28, (4, 4), input_shape=(1, 28, 28), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
+model.add(Conv2D(28, (14, 14), input_shape=(1, 28, 28), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
 
 model.add(Flatten())
 model.add(Dense(10, activation='softmax'))
@@ -101,7 +101,7 @@ model.compile(optimizer='rmsprop',
               metrics=['accuracy'])
 
 # history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0)
-history = model.fit(X_train, Y_train, epochs=E, verbose=0)
+history = model.fit(X_train, Y_train, validation_data=(X_cv, Y_cv), epochs=E)
 # history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0, callbacks=[TestCallback((X_cv, Y_cv))])
 # for layer in model.layers:
 #    print(layer.get_weights())
@@ -113,36 +113,44 @@ for h in range(0, len(X_cv)):
     digitAct = np.argmax(Y_cv[[h]])
     if digitAct != digitPred:
         wrongPred[h] = [digitAct, digitPred]
-# print('confused', digitAct, 'with', digitPred)
+        print('confused', digitAct, 'with', digitPred)
 
 wrongPredSize = len(wrongPred)
 plotRows = int(math.ceil(math.sqrt(wrongPredSize)))
 if plotRows * plotRows < wrongPredSize:
     plotRows = plotRows + 1
 
-# counter = 0
-# for h in wrongPred:
-#     plt.subplot(plotRows+1, plotRows, counter + 1)
-#     plt.title(str(wrongPred[h][1]) + ' ' + str(wrongPred[h][0]))
-#     plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
-#     plt.axis('off')
-#     counter = counter + 1
-# print('Total amount of erroneus labels:', counter)
-# plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
-
+counter = 0
+plt.figure(1)
+for h in wrongPred:
+    plt.subplot(plotRows+1, plotRows, counter + 1)
+    plt.title(str(wrongPred[h][1]) + ' ' + str(wrongPred[h][0]))
+    plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
+    plt.axis('off')
+    counter = counter + 1
+print('Total amount of erroneus labels:', counter)
+plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
+plt.draw()
 
 COLOR_TRAIN = 'blue'
 COLOR_CV = 'green'
-#plt.subplot(plotRows + 1, 1, plotRows + 1)
-plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
-#plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
-plt.xlabel('Epoch')
-plt.title('Training progress')
-
 lineLegend = []
-lineLegend.append(mlines.Line2D([], [], color=COLOR_TRAIN, label='train loss'))
-lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation loss'))
-plt.legend(handles=lineLegend)
+lineLegend.append(mlines.Line2D([], [], color=COLOR_TRAIN, label='train'))
+lineLegend.append(mlines.Line2D([], [], color=COLOR_CV, label='cross validation'))
+
+plt.figure(2)
+plt.subplot(2, 1, 1)
+plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
+plt.plot(range(1, E + 1), history.history['val_loss'], 'k', color=COLOR_CV)
+plt.title('Loss')
+plt.legend(handles=lineLegend, loc = 1)
+
+plt.subplot(2, 1, 2)
+plt.plot(range(1, E + 1), history.history['acc'], 'k', color=COLOR_TRAIN)
+plt.plot(range(1, E + 1), history.history['val_acc'], 'k', color=COLOR_CV)
+plt.xlabel('Epoch')
+plt.title('Accuracy')
+plt.legend(handles=lineLegend, loc = 4)
 
 plt.show()
 
