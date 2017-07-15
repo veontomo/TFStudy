@@ -1,5 +1,6 @@
 # Simple CNN model for CIFAR-10
-# http://machinelearningmastery.com/object-recognition-convolutional-neural-networks-keras-deep-learning-library/
+#https://adeshpande3.github.io/adeshpande3.github.io/A-Beginner%27s-Guide-To-Understanding-Convolutional-Neural-Networks/
+
 import numpy
 from keras.datasets import cifar10
 from keras.models import Sequential

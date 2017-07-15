@@ -1,10 +1,11 @@
+#http://machinelearningmastery.com/object-recognition-convolutional-neural-networks-keras-deep-learning-library/
 import numpy as np
 
 import matplotlib.pyplot as plt
 from keras.constraints import maxnorm
 from keras.models import Sequential
 from keras.callbacks import Callback
-from keras.layers import Dense, Activation, Dropout, Conv2D, Flatten
+from keras.layers import Dense, Activation, Dropout, Conv2D, Flatten, MaxPooling2D
 import matplotlib.lines as mlines
 import math
 from keras.utils import np_utils
@@ -91,9 +92,13 @@ print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
 model = Sequential()
-model.add(Conv2D(28, (14, 14), input_shape=(1, 28, 28), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
-
+model.add(Conv2D(28, (6, 6), input_shape=(1, 28, 28), padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
+model.add(Dropout(0.2))
+model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
+#model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
+model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
+#model.add(Dropout(0.5))
 model.add(Dense(10, activation='softmax'))
 
 model.compile(optimizer='rmsprop',
