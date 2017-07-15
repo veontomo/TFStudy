@@ -39,7 +39,6 @@ num_classes = y_test.shape[1]
 print('X_train', X_train.shape[0], X_train.shape[1])
 print(X_train[0].shape)
 print(y_train[0].shape)
-exit()
 img = X_train[4]
 plt.subplot(3, 1, 1)
 plt.imshow(img[0], cmap='gray')
@@ -47,23 +46,23 @@ plt.subplot(3, 1, 2)
 plt.imshow(img[1], cmap='gray')
 plt.subplot(3, 1, 3)
 plt.imshow(img[2], cmap='gray')
-plt.show()
+#plt.show()
 print('y_train', y_train.shape[0], y_train.shape[1])
 print('X_test', X_test.shape[0], X_test.shape[1])
 print('y_test', y_test.shape[0], y_test.shape[1])
-exit()
+
 # Create the model
 model = Sequential()
 model.add(Conv2D(32, (3, 3), input_shape=(3, 32, 32), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
-model.add(Dropout(0.2))
-model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
-model.add(MaxPooling2D(pool_size=(2, 2)))
+#model.add(Dropout(0.2))
+#model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
+#model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
-model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
-model.add(Dropout(0.5))
+#model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
+#model.add(Dropout(0.5))
 model.add(Dense(num_classes, activation='softmax'))
 # Compile model
-epochs = 25
+epochs = 2
 lrate = 0.01
 decay = lrate/epochs
 sgd = SGD(lr=lrate, momentum=0.9, decay=decay, nesterov=False)

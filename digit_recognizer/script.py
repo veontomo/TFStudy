@@ -4,12 +4,15 @@ import matplotlib.pyplot as plt
 from keras.constraints import maxnorm
 from keras.models import Sequential
 from keras.callbacks import Callback
-from keras.layers import Dense, Activation, Dropout, Conv2D
+from keras.layers import Dense, Activation, Dropout, Conv2D, Flatten
 import matplotlib.lines as mlines
 import math
-
 from keras.utils import np_utils
 
+# import keras
+
+# print(keras.__version__)
+# exit()
 E = 100  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for cross-validation
 LINE_NUMBERS = 200  # number of lines to read from 'train.csv'
@@ -43,9 +46,8 @@ data = [[int(i) for i in v.strip().split(",")] for v in lst[1:]]
 X = np.array(data)[:, 1:]
 Y = np.array(data)[:, 0]
 
-
 Ycateg = np_utils.to_categorical(Y)
-Ximg = np.array([np.reshape(x, [28, 28]) for x in X ])
+Ximg = np.array([[np.reshape(x, [28, 28])] for x in X])
 print(Ximg.shape)
 
 F = X.shape[1]  # dim of the input vector (number of features)
@@ -62,23 +64,24 @@ lossAccum = []
 weightHistory = []
 bias0 = []
 
-class TestCallback(Callback):
-    def __init__(self, test_data):
-        self.test_data = test_data
 
-    def on_epoch_end(self, epoch, logs={}):
-        x, y = self.test_data
-        weightHistory.append(self.model.layers[0].get_weights()[0][0])
-        bias0.append(self.model.layers[0].get_weights()[0][1])
-        predicted = self.model.predict(x, verbose=0)
-        l = loss(y, predicted)
-        print('Epoch', epoch + 1, 'loss', l)
-        lossAccum.append(l)
+# class TestCallback(Callback):
+#     def __init__(self, test_data):
+#         self.test_data = test_data
+#
+#     def on_epoch_end(self, epoch, logs={}):
+#         x, y = self.test_data
+#         weightHistory.append(self.model.layers[0].get_weights()[0][0])
+#         bias0.append(self.model.layers[0].get_weights()[0][1])
+#         predicted = self.model.predict(x, verbose=0)
+#         l = loss(y, predicted)
+#         print('Epoch', epoch + 1, 'loss', l)
+#         lossAccum.append(l)
 
 
-X_train = X[:T]
+X_train = Ximg[:T]
 Y_train = Ycateg[:T]
-X_cv = X[T:]
+X_cv = Ximg[T:]
 Y_cv = Ycateg[T:]
 
 print("number of features", F)
@@ -88,7 +91,9 @@ print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
 model = Sequential()
-model.add(Conv2D(28, (4, 4), input_shape=(None, 28, 28), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
+model.add(Conv2D(28, (4, 4), input_shape=(1, 28, 28), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
+
+model.add(Flatten())
 model.add(Dense(10, activation='softmax'))
 
 model.compile(optimizer='rmsprop',
@@ -96,7 +101,8 @@ model.compile(optimizer='rmsprop',
               metrics=['accuracy'])
 
 # history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0)
-history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0, callbacks=[TestCallback((X_cv, Y_cv))])
+history = model.fit(X_train, Y_train, epochs=E, verbose=0)
+# history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0, callbacks=[TestCallback((X_cv, Y_cv))])
 # for layer in model.layers:
 #    print(layer.get_weights())
 wrongPred = {}
@@ -127,9 +133,9 @@ if plotRows * plotRows < wrongPredSize:
 
 COLOR_TRAIN = 'blue'
 COLOR_CV = 'green'
-plt.subplot(plotRows+1, 1, plotRows+1)
+#plt.subplot(plotRows + 1, 1, plotRows + 1)
 plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
-plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
+#plt.plot(range(1, E + 1), lossAccum, 'k', color=COLOR_CV)
 plt.xlabel('Epoch')
 plt.title('Training progress')
 
