@@ -14,7 +14,7 @@ from keras.utils import np_utils
 
 # print(keras.__version__)
 # exit()
-E = 50  # number of epochs
+E = 2  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for training. The rest - for the cross-validation
 LINE_NUMBERS = 420  # number of lines to read from 'train.csv'
 
@@ -92,14 +92,14 @@ print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
 model = Sequential()
-model.add(Conv2D(28, (6, 6), input_shape=(1, 28, 28), padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
+model.add(Conv2D(32, (5, 5), input_shape=(1, 28, 28), padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
-model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
+model.add(Conv2D(33, (5, 5), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
-model.add(Conv2D(32, (3, 3), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
+model.add(Conv2D(34, (5, 5), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
 #model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
-model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
+#model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
 #model.add(Dropout(0.5))
 model.add(Dense(10, activation='softmax'))
 
@@ -135,7 +135,7 @@ for h in wrongPred:
     plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
     plt.axis('off')
     counter = counter + 1
-print('Total amount of erroneus labels:', counter)
+print('Total amount of erroneous labels:', counter, 'out of', len(X_cv))
 plt.subplots_adjust(top=0.9, bottom=0.1, left=0.10, right=0.95, hspace=0.8, wspace=0.3)
 plt.draw()
 
@@ -161,15 +161,11 @@ plt.legend(handles=lineLegend, loc = 4)
 
 plt.show()
 
-layerNum = 1
-for layer in model.layers:
-    weights = layer.get_weights()
-    weightNum = 1
-    for w in weights:
-        print('layer n. ', layerNum, 'weight matrix n.', weightNum)
-        print(w.shape)
-        weightNum = weightNum + 1
-        layerNum = layerNum + 1
+for layer in range(0, len(model.layers)):
+    weights = model.layers[layer].get_weights()
+    for w in range(0, len(weights)):
+        print('layer n. ', layer, 'weight matrix n.', w+1)
+        print(weights[w].shape)
 
 # show input weight evolution
 # counter = 1
