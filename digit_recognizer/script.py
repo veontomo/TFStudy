@@ -1,4 +1,4 @@
-#http://machinelearningmastery.com/object-recognition-convolutional-neural-networks-keras-deep-learning-library/
+# http://machinelearningmastery.com/object-recognition-convolutional-neural-networks-keras-deep-learning-library/
 #
 
 import numpy as np
@@ -11,14 +11,13 @@ from keras.layers import Dense, Activation, Dropout, Conv2D, Flatten, MaxPooling
 import matplotlib.lines as mlines
 import math
 from keras.utils import np_utils
+import os
 
-# import keras
-
-# print(keras.__version__)
-# exit()
-E = 2  # number of epochs
+E = 100  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for training. The rest - for the cross-validation
-LINE_NUMBERS = 420  # number of lines to read from 'train.csv'
+LINE_NUMBERS = 2100  # number of lines to read from 'train.csv'
+
+dir = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/") + "/"
 
 
 def mod(x):
@@ -40,7 +39,9 @@ def loss(x, y):
     return -np.sum(crossBinaryVect(x - y)) / (x.shape[0] * x.shape[1])
 
 
-with open("train.csv", encoding="ascii") as file:
+source = dir + "train.csv"
+
+with open(source, encoding="ascii") as file:
     lst = [next(file) for x in range(0, LINE_NUMBERS)]
 
 title = [v.strip() for v in lst[0].split(",")]
@@ -66,7 +67,6 @@ def binary_crossentropy(X, Y):
 lossAccum = []
 weightHistory = []
 bias0 = []
-
 
 # class TestCallback(Callback):
 #     def __init__(self, test_data):
@@ -94,15 +94,17 @@ print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
 model = Sequential()
-model.add(Conv2D(32, (5, 5), input_shape=(1, 28, 28), padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
+model.add(
+    Conv2D(32, (5, 5), input_shape=(1, 28, 28), padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
-model.add(Conv2D(33, (5, 5), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
+model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same', data_format=None))
+model.add(Conv2D(32, (5, 5), activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
-model.add(Conv2D(34, (5, 5), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
-#model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(32, (5, 5), activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
+# model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
-#model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
-#model.add(Dropout(0.5))
+# model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
+# model.add(Dropout(0.5))
 model.add(Dense(10, activation='softmax'))
 
 model.compile(optimizer='rmsprop',
@@ -132,7 +134,7 @@ if plotRows * plotRows < wrongPredSize:
 counter = 0
 plt.figure(1)
 for h in wrongPred:
-    plt.subplot(plotRows+1, plotRows, counter + 1)
+    plt.subplot(plotRows + 1, plotRows, counter + 1)
     plt.title(str(wrongPred[h][1]) + ' ' + str(wrongPred[h][0]))
     plt.imshow(np.reshape(X_cv[[h]], [28, 28]), cmap='gray')
     plt.axis('off')
@@ -152,14 +154,14 @@ plt.subplot(2, 1, 1)
 plt.plot(range(1, E + 1), history.history['loss'], 'k', color=COLOR_TRAIN)
 plt.plot(range(1, E + 1), history.history['val_loss'], 'k', color=COLOR_CV)
 plt.title('Loss')
-plt.legend(handles=lineLegend, loc = 1)
+plt.legend(handles=lineLegend, loc=1)
 
 plt.subplot(2, 1, 2)
 plt.plot(range(1, E + 1), history.history['acc'], 'k', color=COLOR_TRAIN)
 plt.plot(range(1, E + 1), history.history['val_acc'], 'k', color=COLOR_CV)
 plt.xlabel('Epoch')
 plt.title('Accuracy')
-plt.legend(handles=lineLegend, loc = 4)
+plt.legend(handles=lineLegend, loc=4)
 
 plt.show()
 
@@ -167,9 +169,9 @@ for layer in range(0, len(model.layers)):
     weights = model.layers[layer].get_weights()
     wMax = len(weights)
     if wMax == 0:
-        print('layer', layer, ' has no weights')        
+        print('layer', layer, ' has no weights')
     for w in range(0, wMax):
-        print('layer n. ', layer, 'weight matrix n.', w+1)
+        print('layer n. ', layer, 'weight matrix n.', w + 1)
         print(weights[w].shape)
 
 # show input weight evolution
