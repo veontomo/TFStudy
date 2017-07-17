@@ -1,0 +1,6 @@
+See here for explanation of convolutional network output structure: 
+
+https://stackoverflow.com/questions/43306323/keras-conv2d-and-input-channels
+ |
+ °-----> https://petewarden.com/2015/04/20/why-gemm-is-at-the-heart-of-deep-learning/
+ 

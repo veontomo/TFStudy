@@ -1,4 +1,6 @@
 #http://machinelearningmastery.com/object-recognition-convolutional-neural-networks-keras-deep-learning-library/
+#
+
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -163,7 +165,10 @@ plt.show()
 
 for layer in range(0, len(model.layers)):
     weights = model.layers[layer].get_weights()
-    for w in range(0, len(weights)):
+    wMax = len(weights)
+    if wMax == 0:
+        print('layer', layer, ' has no weights')        
+    for w in range(0, wMax):
         print('layer n. ', layer, 'weight matrix n.', w+1)
         print(weights[w].shape)
 
