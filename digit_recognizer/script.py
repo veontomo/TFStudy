@@ -13,7 +13,7 @@ import math
 from keras.utils import np_utils
 import os
 
-E = 100  # number of epochs
+E = 20  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for training. The rest - for the cross-validation
 LINE_NUMBERS = 2100  # number of lines to read from 'train.csv'
 
@@ -95,23 +95,24 @@ print("number of epochs", E)
 
 model = Sequential()
 model.add(
-    Conv2D(32, (5, 5), input_shape=(1, 28, 28), padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
+    Conv2D(10, (5, 5), input_shape=(1, 28, 28), padding='same', activation='relu', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
 model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same', data_format=None))
-model.add(Conv2D(32, (5, 5), activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
+model.add(Conv2D(20, (5, 5), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
-model.add(Conv2D(32, (5, 5), activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
+model.add(Conv2D(10, (5, 5), activation='relu', padding='same', kernel_constraint=maxnorm(3)))
 # model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Flatten())
 # model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
 # model.add(Dropout(0.5))
 model.add(Dense(10, activation='softmax'))
 
+print(model.summary())
+
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
-# history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0)
 history = model.fit(X_train, Y_train, validation_data=(X_cv, Y_cv), epochs=E)
 # history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0, callbacks=[TestCallback((X_cv, Y_cv))])
 # for layer in model.layers:
@@ -163,16 +164,26 @@ plt.xlabel('Epoch')
 plt.title('Accuracy')
 plt.legend(handles=lineLegend, loc=4)
 
-plt.show()
+# plt.show()
 
+print('train data: ', X_train.shape)
 for layer in range(0, len(model.layers)):
     weights = model.layers[layer].get_weights()
     wMax = len(weights)
     if wMax == 0:
         print('layer', layer, ' has no weights')
     for w in range(0, wMax):
-        print('layer n. ', layer, 'weight matrix n.', w + 1)
+        print('layer n. ', layer, 'weight matrix n.', w)
         print(weights[w].shape)
+
+inputLayerWeights = model.layers[0].get_weights()[0]
+plt.figure(3)
+for i in range(0, 10):
+    for k in range(0, 28):
+        plt.subplot(10, 28, i*28 + k+1)
+        plt.imshow(np.reshape(inputLayerWeights[:, :, k, i], [5, 5]), cmap='gray')
+        plt.axis('off')
+plt.show()
 
 # show input weight evolution
 # counter = 1
