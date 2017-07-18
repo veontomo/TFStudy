@@ -2,7 +2,7 @@
 #
 
 import numpy as np
-
+from keras.utils import plot_model
 import matplotlib.pyplot as plt
 from keras.constraints import maxnorm
 from keras.models import Sequential
@@ -13,9 +13,9 @@ import math
 from keras.utils import np_utils
 import os
 
-E = 200  # number of epochs
+E = 1  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for training. The rest - for the cross-validation
-LINE_NUMBERS = 2000  # number of lines to read from 'train.csv'
+LINE_NUMBERS = 200  # number of lines to read from 'train.csv'
 
 dir = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/") + "/"
 
@@ -96,11 +96,11 @@ print("number of epochs", E)
 Filters = 10
 
 
-kernelSize = [7 ,7]
+kernelSize = [2, 3]
 
 model = Sequential()
 model.add(
-    Conv2D(Filters, (kernelSize[0], kernelSize[1]), input_shape=(1, 28, 28), padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
+    Conv2D(Filters, (kernelSize[0], kernelSize[1]), input_shape=(1, 28, 28), use_bias=False,  padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
 model.add(MaxPooling2D(pool_size=(3, 3), strides=None, padding='same', data_format=None))
 model.add(Conv2D(20, (5, 5), activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
@@ -116,14 +116,26 @@ model.add(Dense(10, activation='softmax'))
 
 print(model.summary())
 
+#plot_model(model, to_file='model.png')
+#exit()
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['accuracy'])
 
+print(model.layers[0].output)
 history = model.fit(X_train, Y_train, validation_data=(X_cv, Y_cv), epochs=E)
 # history = model.fit(X_train, Y_train, nb_epoch=E, verbose=0, callbacks=[TestCallback((X_cv, Y_cv))])
 # for layer in model.layers:
 #    print(layer.get_weights())
+
+
+model2 = Sequential()
+model2.add(Conv2D(Filters, (kernelSize[0], kernelSize[1]), input_shape=(1, 28, 28), use_bias=False, padding='same', activation='sigmoid', kernel_constraint=maxnorm(3), weights=model.layers[0].get_weights()))
+predictFirstLayer = model2.predict(X_cv)
+print('first layer:', X_cv.shape, ' -> ', predictFirstLayer.shape)
+exit()
+
+
 wrongPred = {}
 for h in range(0, len(X_cv)):
     pickElem = X_cv[[h]]
