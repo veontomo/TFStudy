@@ -5,4 +5,8 @@ https://stackoverflow.com/questions/43306323/keras-conv2d-and-input-channels
  °-----> https://petewarden.com/2015/04/20/why-gemm-is-at-the-heart-of-deep-learning/
  |
  °-----> http://cs231n.github.io/convolutional-networks/ (!!!)
+
+
+
+ https://cambridgespark.com/content/tutorials/convolutional-neural-networks-with-keras/index.html
  
