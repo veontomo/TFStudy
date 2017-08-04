@@ -1,14 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
-from keras.layers import Dense, Conv2D, Flatten
-from keras.layers.convolutional import Convolution2D 
+from keras.layers import Dense, Conv2D, Flatten, Input, Convolution2D
+from keras.models import Model
+# from keras.layers.convolutional import Convolution2D 
 import matplotlib.lines as mlines
 import math
 from keras.utils import np_utils
 
-FILTERS = 3
-KERNEL = [3, 3]
+FILTERS = 50
+KERNEL = [4, 3]
 
 ROWS = 266
 COLUMNS = 266
@@ -24,12 +25,24 @@ print('X shape:', X.shape)
 print('Y shape:', Y.shape)
 print('kernel shape:', KERNEL)
 print('filters:', FILTERS)
+
+
+inp = Input(shape=(ROWS, COLUMNS, CHANNELS))
+conv1 = Convolution2D(FILTERS, (KERNEL[0], KERNEL[1]), padding="same", activation="relu")(inp)
+flat = Flatten()(conv1)
+out = Dense(CLASSES, activation="softmax")(flat)
+
+model0 = Model(inputs = inp, outputs = out)
+print("Model 0")
+model0.summary()
+
+
 model = Sequential()
-model.add(Convolution2D(FILTERS, (KERNEL[0], KERNEL[1]), input_shape=(CHANNELS, ROWS, COLUMNS), use_bias=False, border_mode='same', padding='same', activation='sigmoid'))
+model.add(Convolution2D(FILTERS, (KERNEL[0], KERNEL[1]), input_shape=(ROWS, COLUMNS, CHANNELS), use_bias=True, padding='same', activation='sigmoid'))
 model.add(Flatten())
 model.add(Dense(CLASSES, activation='softmax'))
 
-print(model.summary())
+print("Model 1", model.summary())
 print(np.array(model.layers[0].output).shape)
 # plot_model(model, to_file='model.png')
 exit()
