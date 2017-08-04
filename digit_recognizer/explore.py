@@ -2,16 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Conv2D, Flatten
+from keras.layers.convolutional import Convolution2D 
 import matplotlib.lines as mlines
 import math
 from keras.utils import np_utils
 
-FILTERS = 1
-KERNEL = [1, 1]
+FILTERS = 3
+KERNEL = [3, 3]
 
-ROWS = 3
-COLUMNS = 4
-CHANNELS = 1
+ROWS = 266
+COLUMNS = 266
+CHANNELS = 3
 N = 3
 Xtmp = [[[[1 if (c % (n+1)) == 0 else 0 for c in range(0, COLUMNS)] for w in range(0, ROWS)] for c in range(0, CHANNELS)] for n in
         range(0, N)]
@@ -24,7 +25,7 @@ print('Y shape:', Y.shape)
 print('kernel shape:', KERNEL)
 print('filters:', FILTERS)
 model = Sequential()
-model.add(Conv2D(FILTERS, (KERNEL[0], KERNEL[1]), input_shape=(CHANNELS, ROWS, COLUMNS), use_bias=False,  padding='same', activation='sigmoid'))
+model.add(Convolution2D(FILTERS, (KERNEL[0], KERNEL[1]), input_shape=(CHANNELS, ROWS, COLUMNS), use_bias=False, border_mode='same', padding='same', activation='sigmoid'))
 model.add(Flatten())
 model.add(Dense(CLASSES, activation='softmax'))
 
