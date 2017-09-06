@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 
 x = tf.Variable(3.0)
@@ -43,3 +44,11 @@ with tf.Session() as sess:
 	    print("before", sess.run([x, y, f1, f2]))
 	    sess.run(opt2)
 	    print("after2", sess.run([x, y, f1, f2]))
+
+X = tf.placeholder(tf.float32, (5, 3))
+W = tf.placeholder(tf.float32, (1, 5))
+Z = tf.matmul(W, X)
+S = tf.sigmoid(Z)
+
+with tf.Session() as s:
+	print(s.run(S, feed_dict={X: np.random.randn(5, 3), W: np.randn.randn(1, 5)}))
