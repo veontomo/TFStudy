@@ -10,96 +10,82 @@ from keras.callbacks import ModelCheckpoint
 from keras.utils import np_utils
 import sys
 
-
-TIME_STEPS = 100
-NUM_UNITS = 128
-
+SEQUENCE_LENGTH = 20
+NUM_UNITS = 512
 
 # load ascii text and covert to lowercase
 dirName = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/")
-filename = dirName + "/wonderland_full.txt"
-raw_text = open(filename).read()
-raw_text = raw_text.lower()
+filename = dirName + "/poems.txt"
+fileContent = open(filename).read()
+lines =[line.lower() for line in fileContent.split("\n") if not(line.startswith("#"))]
+content = '\n'.join(lines)
+
 # create mapping of unique chars to integers, and a reverse mapping
-chars = sorted(list(set(raw_text)))
-char_to_int = dict((c, i) for i, c in enumerate(chars))
+chars = sorted(list(set(content)))
+charToInt = dict((c, i) for i, c in enumerate(chars))
 int_to_char = dict((i, c) for i, c in enumerate(chars))
 # summarize the loaded data
-n_chars = len(raw_text)
-n_vocab = len(chars)
-print("Total Characters: ", n_chars)
-print("Total Vocab: ", n_vocab)
-# prepare the dataset of input to output pairs encoded as integers
+charNum = len(content)
+symbolNum = len(chars)
+print("Total characters: ", charNum)
+print("Total symbols: ", symbolNum)
 
-seq_length = TIME_STEPS
+# prepare the dataset of input to output pairs encoded as integers
 dataX = []
 dataY = []
-for i in range(0, n_chars - seq_length, 1):
-	seq_in = raw_text[i:i + seq_length]
-	seq_out = raw_text[i + seq_length]
-	dataX.append([char_to_int[char] for char in seq_in])
-	dataY.append(char_to_int[seq_out])
-n_patterns = len(dataX)
-print("Total Patterns: ", n_patterns)
+for i in range(0, charNum - SEQUENCE_LENGTH, 1):
+    seqIn = content[i:i + SEQUENCE_LENGTH]
+    seqOut = content[i + SEQUENCE_LENGTH]
+    dataX.append([charToInt[char] for char in seqIn])
+    dataY.append(charToInt[seqOut])
+patternNum = len(dataX)
+print("Total Patterns: ", patternNum)
 # reshape X to be [samples, time steps, features]
-X = numpy.reshape(dataX, (n_patterns, seq_length, 1))
+X = numpy.reshape(dataX, (patternNum, SEQUENCE_LENGTH, 1))
 # normalize
-X = X / float(n_vocab)
+X = X / float(symbolNum)
 # one hot encode the output variable
 y = np_utils.to_categorical(dataY)
 # define the LSTM model
-model = Sequential()
-model.add(LSTM(NUM_UNITS, input_shape=(X.shape[1], X.shape[2])))
-model.add(Dropout(0.2))
-model.add(Dense(y.shape[1], activation='softmax'))
-# load the network weights
-filename = dirName + "/weights/improvement-29-1.9994.hdf5"
-model.load_weights(filename)
-model.compile(loss='categorical_crossentropy', optimizer='adam')
-# pick a random seed
-start = numpy.random.randint(0, len(dataX)-1)
-pattern = dataX[start]
+print("number of units: ", NUM_UNITS)
+print("X shape:", X.shape)
+print("y shape:", y.shape)
 
-print("Seed:")
-print("\"", ''.join([int_to_char[value] for value in pattern]), "\"")
-# generate characters
-for i in range(1000):
-	x = numpy.reshape(pattern, (1, len(pattern), 1))
-	x = x / float(n_vocab)
-	prediction = model.predict(x, verbose=0)
-	index = numpy.argmax(prediction)
-	result = int_to_char[index]
-	seq_in = [int_to_char[value] for value in pattern]
-	sys.stdout.write(result)
-	pattern.append(index)
-	pattern = pattern[1:len(pattern)]
-print("\nDone.")
+
+# define the checkpoint
+filepath="weights/wordpredict-{epoch:05d}-{loss:.4f}.hdf5"
+checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=1, save_best_only=True, mode='min')
+callbacks_list = [checkpoint]
 
 model = Sequential()
 model.add(LSTM(NUM_UNITS, input_shape=(X.shape[1], X.shape[2])))
 model.add(Dropout(0.2))
 model.add(Dense(y.shape[1], activation='softmax'))
-
+model.summary()
 # load the network weights
+filename = dirName + "/weights/wordpredict-00105-0.0210.hdf5"
 model.load_weights(filename)
-
 model.compile(loss='categorical_crossentropy', optimizer='adam')
-
-
+#model.fit(X, y, epochs=200, batch_size=32, callbacks=callbacks_list, initial_epoch = 0)
 # pick a random seed
-start = numpy.random.randint(0, len(dataX)-1)
-pattern = dataX[start]
+#start = numpy.random.randint(0, len(dataX) - 1)
+#pattern = dataX[start]
+phrase = "soft kitty, warm kitty little ball of fur"
+pattern = [charToInt[c] for c in phrase[:SEQUENCE_LENGTH]]
+print(pattern)
 print("Seed:")
 print("\"", ''.join([int_to_char[value] for value in pattern]), "\"")
 # generate characters
-for i in range(1000):
-	x = numpy.reshape(pattern, (1, len(pattern), 1))
-	x = x / float(n_vocab)
-	prediction = model.predict(x, verbose=0)
-	index = numpy.argmax(prediction)
-	result = int_to_char[index]
-	seq_in = [int_to_char[value] for value in pattern]
-	sys.stdout.write(result)
-	pattern.append(index)
-	pattern = pattern[1:len(pattern)]
+for i in range(100):
+    x = numpy.reshape(pattern, (1, len(pattern), 1))
+    x = x / float(symbolNum)
+    prediction = model.predict(x, verbose=0)
+    index = numpy.argmax(prediction)
+    result = int_to_char[index]
+    seqIn = [int_to_char[value] for value in pattern]
+    sys.stdout.write(result)
+    pattern.append(index)
+    pattern = pattern[1:len(pattern)]
 print("\nDone.")
+
+

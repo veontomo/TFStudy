@@ -2,21 +2,23 @@
 #
 
 import numpy as np
-from keras.utils import plot_model
 import matplotlib.pyplot as plt
 from keras.constraints import maxnorm
 from keras.models import Sequential
-from keras.callbacks import Callback
 from keras.layers import Dense, Activation, Dropout, Conv2D, Flatten, MaxPooling2D
 import matplotlib.lines as mlines
 import math
 from keras.utils import np_utils
 import os
 
-E = 1  # number of epochs
+E = 50  # number of epochs
 FRACTION = 0.8  # fraction of initial data to be used for training. The rest - for the cross-validation
-LINE_NUMBERS = 200  # number of lines to read from 'train.csv'
+TOTAL_LINE_NUMBERS = 42001
+LINE_NUMBERS = 20  # number of lines to read from 'train.csv'
 
+HEIGHT = 28
+WIDTH = 28
+CHANNELS = 1
 dir = os.path.dirname(os.path.realpath(__file__)).replace("\\", "/") + "/"
 
 
@@ -42,17 +44,17 @@ def loss(x, y):
 source = dir + "train.csv"
 
 with open(source, encoding="ascii") as file:
+    #    lst = file.readlines()
     lst = [next(file) for x in range(0, LINE_NUMBERS)]
+print(len(lst))
 
 title = [v.strip() for v in lst[0].split(",")]
 data = [[int(i) for i in v.strip().split(",")] for v in lst[1:]]
 
 X = np.array(data)[:, 1:]
 Y = np.array(data)[:, 0]
-
 Ycateg = np_utils.to_categorical(Y)
-Ximg = np.array([[np.reshape(x, [28, 28])] for x in X])
-print(Ximg.shape)
+Ximg = np.array([np.reshape(np.array(x), [HEIGHT, WIDTH, CHANNELS]) for x in X])
 
 F = X.shape[1]  # dim of the input vector (number of features)
 M = Ycateg.shape[1]  # dim of the output vector
@@ -66,7 +68,6 @@ def binary_crossentropy(X, Y):
 
 lossAccum = []
 weightHistory = []
-bias0 = []
 
 # class TestCallback(Callback):
 #     def __init__(self, test_data):
@@ -93,31 +94,39 @@ print("number of test data", T)
 print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
-Filters = 10
+Filters1 = 30
+Filters2 = 15
+Filters3 = 15
 
-
-kernelSize = [2, 3]
+kernelSize1 = [5, 6]
+kernelSize2 = (3, 3)
+kernelSize3 = (3, 3)
+pool_1 = (3, 3)
+pool_2 = (4, 4)
+pool_3 = (5, 5)
 
 model = Sequential()
-model.add(
-    Conv2D(Filters, (kernelSize[0], kernelSize[1]), input_shape=(1, 28, 28), use_bias=False,  padding='same', activation='sigmoid', kernel_constraint=maxnorm(3)))
+layer1 = Conv2D(Filters1, (kernelSize1[0], kernelSize1[1]), input_shape=(HEIGHT, WIDTH, CHANNELS), use_bias=False,
+                padding='same', activation='sigmoid')
+model.add(layer1)
 model.add(Dropout(0.2))
-model.add(MaxPooling2D(pool_size=(3, 3), strides=None, padding='same', data_format=None))
-model.add(Conv2D(20, (5, 5), activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
+model.add(MaxPooling2D(pool_size=pool_1, strides=None, padding='same', data_format=None))
+model.add(Conv2D(Filters2, kernelSize2, activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.2))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same', data_format=None))
-model.add(Conv2D(10, (5, 5), activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
+model.add(MaxPooling2D(pool_size=pool_2, strides=None, padding='same', data_format=None))
+model.add(Conv2D(Filters3, kernelSize3, activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
 # model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=None, padding='same', data_format=None))
+model.add(MaxPooling2D(pool_size=pool_3, strides=None, padding='same', data_format=None))
 model.add(Flatten())
-# model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
-# model.add(Dropout(0.5))
-model.add(Dense(10, activation='softmax'))
+model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
+model.add(Dropout(0.5))
+model.add(Dense(M, activation='softmax'))
 
-print(model.summary())
+model.summary()
+exit()
 
-#plot_model(model, to_file='model.png')
-#exit()
+# plot_model(model, to_file='model.png')
+# exit()
 model.compile(optimizer='rmsprop',
               loss='binary_crossentropy',
               metrics=['accuracy'])
@@ -130,11 +139,16 @@ history = model.fit(X_train, Y_train, validation_data=(X_cv, Y_cv), epochs=E)
 
 
 model2 = Sequential()
-model2.add(Conv2D(Filters, (kernelSize[0], kernelSize[1]), input_shape=(1, 28, 28), use_bias=False, padding='same', activation='sigmoid', kernel_constraint=maxnorm(3), weights=model.layers[0].get_weights()))
+model2.add(
+    Conv2D(Filters1, (kernelSize1[0], kernelSize1[1]),
+           input_shape=(HEIGHT, WIDTH, CHANNELS),
+           use_bias=True, padding='same',
+           activation='sigmoid',
+           kernel_constraint=maxnorm(3),
+           weights=model.layers[0].get_weights())
+)
 predictFirstLayer = model2.predict(X_cv)
 print('first layer:', X_cv.shape, ' -> ', predictFirstLayer.shape)
-exit()
-
 
 wrongPred = {}
 for h in range(0, len(X_cv)):
@@ -144,7 +158,7 @@ for h in range(0, len(X_cv)):
     digitAct = np.argmax(Y_cv[[h]])
     if digitAct != digitPred:
         wrongPred[h] = [digitAct, digitPred]
-#        print('confused', digitAct, 'with', digitPred)
+# print('confused', digitAct, 'with', digitPred)
 
 wrongPredSize = len(wrongPred)
 plotRows = int(math.ceil(math.sqrt(wrongPredSize)))
@@ -196,14 +210,17 @@ for layer in range(0, len(model.layers)):
         print(weights[w].shape)
 
 inputLayerWeights = model.layers[0].get_weights()[0]
-plt.figure(3)
-for i in range(0, Filters):
-#    for k in range(0, 28):
-    plt.subplot(Filters, 1, i+1)
-    plt.imshow(np.reshape(np.sum(inputLayerWeights[:, :, :, i], 2), kernelSize), cmap='gray')
-    plt.axis('off')
-plt.show()
+print(inputLayerWeights.shape)
 
+plt.figure(3)
+plt.title('First layer weights (inverted)')
+for i in range(0, Filters1):
+    plt.subplot((Filters1 // 5) + 2, 5, i + 1)
+    matrix = 1 - np.array(inputLayerWeights[:, :, 0, i])
+    plt.imshow(np.reshape(matrix, kernelSize1), cmap='gray')
+    plt.axis('off')
+plt.draw()
+plt.show()
 # show input weight evolution
 # counter = 1
 # for w in weightHistory:
@@ -212,19 +229,3 @@ plt.show()
 #     plt.axis('off')
 #     counter = counter + 1
 # plt.show()
-
-# show input bias evolution
-counter = 1
-historyCounter = 0
-maxPlotNum = 40
-if E > maxPlotNum:
-    historyStep = E // maxPlotNum
-else:
-    historyStep = 1
-for w in bias0[::historyStep]:
-    plt.subplot((maxPlotNum // 5) + 2, 5, counter)
-    plt.imshow(np.reshape(w, [28, 28]), cmap='gray')
-    plt.axis('off')
-    counter = counter + 1
-
-plt.show()
