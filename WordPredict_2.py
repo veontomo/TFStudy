@@ -1,11 +1,12 @@
 # Next word prediction
 # See http://machinelearningmastery.com/text-generation-lstm-recurrent-neural-networks-python-keras/
 import os
+from _ast import Num
+
 import numpy
 from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import Dropout
-from keras.layers import LSTM
+from keras.layers import Dense, Dropout, LSTM
+from keras import optimizers
 from keras.callbacks import ModelCheckpoint
 from keras.utils import np_utils
 import sys
@@ -59,14 +60,17 @@ callbacks_list = [checkpoint]
 
 model = Sequential()
 model.add(LSTM(NUM_UNITS, input_shape=(X.shape[1], X.shape[2])))
-model.add(Dropout(0.2))
+model.add(Dropout(0.5))
+model.add(Dense(NUM_UNITS*2, activation='softmax'))
+model.add(Dropout(0.5))
 model.add(Dense(y.shape[1], activation='softmax'))
 model.summary()
 # load the network weights
-filename = dirName + "/weights/wordpredict-00105-0.0210.hdf5"
-model.load_weights(filename)
-model.compile(loss='categorical_crossentropy', optimizer='adam')
-#model.fit(X, y, epochs=200, batch_size=32, callbacks=callbacks_list, initial_epoch = 0)
+#filename = dirName + "/weights/wordpredict-00105-0.0210.hdf5"
+#model.load_weights(filename)
+optimizer = optimizers.Adam(lr = 0.01, decay=0.1)
+model.compile(loss='categorical_crossentropy', optimizer=optimizer)
+model.fit(X, y, epochs=20, batch_size=1024, callbacks=callbacks_list, initial_epoch = 0)
 # pick a random seed
 #start = numpy.random.randint(0, len(dataX) - 1)
 #pattern = dataX[start]
