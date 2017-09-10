@@ -5,16 +5,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 from keras.constraints import maxnorm
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout, Conv2D, Flatten, MaxPooling2D
+from keras.layers import Dense, Activation, Dropout, Conv2D, Flatten, MaxPooling2D, BatchNormalization
 import matplotlib.lines as mlines
 import math
 from keras.utils import np_utils
 import os
 
-E = 50  # number of epochs
-FRACTION = 0.8  # fraction of initial data to be used for training. The rest - for the cross-validation
+E = 40  # number of epochs
+FRACTION_TRAIN = 0.7  # fraction of initial data to be used for training.
+FRACTION_CV = 0.1  # fraction of initial data to be used for cross-validation.
+FRACTION_TEST = 1 - FRACTION_CV - FRACTION_TRAIN  # fraction of initial data to be used for test
+
+if FRACTION_TRAIN < 0:
+    print("Fraction for the train data must be non-negative")
+    exit()
+
+if FRACTION_CV < 0:
+    print("Fraction for the cross-validation data must be non-negative")
+    exit()
+
+if FRACTION_TEST < 0:
+    print("Fraction for the test data must be non-negative")
+    exit()
+
 TOTAL_LINE_NUMBERS = 42001
-LINE_NUMBERS = 20  # number of lines to read from 'train.csv'
+LINE_NUMBERS = 2000  # number of lines to read from 'train.csv'
 
 HEIGHT = 28
 WIDTH = 28
@@ -46,19 +61,19 @@ source = dir + "train.csv"
 with open(source, encoding="ascii") as file:
     #    lst = file.readlines()
     lst = [next(file) for x in range(0, LINE_NUMBERS)]
-print(len(lst))
 
 title = [v.strip() for v in lst[0].split(",")]
 data = [[int(i) for i in v.strip().split(",")] for v in lst[1:]]
 
-X = np.array(data)[:, 1:]
+X = np.array(data)[:, 1:] / 255.0 - 0.5
 Y = np.array(data)[:, 0]
 Ycateg = np_utils.to_categorical(Y)
 Ximg = np.array([np.reshape(np.array(x), [HEIGHT, WIDTH, CHANNELS]) for x in X])
 
 F = X.shape[1]  # dim of the input vector (number of features)
 M = Ycateg.shape[1]  # dim of the output vector
-T = int(FRACTION * X.shape[0])  # number of train input vectors
+TRAIN_QTY = int(FRACTION_TRAIN * X.shape[0])  # number of train input vectors
+CV_QTY = int(FRACTION_CV * X.shape[0])
 
 
 def binary_crossentropy(X, Y):
@@ -83,47 +98,46 @@ weightHistory = []
 #         lossAccum.append(l)
 
 
-X_train = Ximg[:T]
-Y_train = Ycateg[:T]
-X_cv = Ximg[T:]
-Y_cv = Ycateg[T:]
+X_train = Ximg[:TRAIN_QTY]
+Y_train = Ycateg[:TRAIN_QTY]
+X_cv = Ximg[TRAIN_QTY:(TRAIN_QTY + CV_QTY)]
+Y_cv = Ycateg[TRAIN_QTY:(TRAIN_QTY + CV_QTY)]
+X_test = Ximg[(TRAIN_QTY + CV_QTY):]
+Y_test = Ycateg[(TRAIN_QTY + CV_QTY):]
 
 print("number of features", F)
 print("output dimension", M)
-print("number of test data", T)
+print("number of test data", TRAIN_QTY)
 print("number of cross validation data", len(X_cv))
 print("number of epochs", E)
 
-Filters1 = 30
-Filters2 = 15
-Filters3 = 15
+Filters1 = 50
+Filters2 = 35
 
-kernelSize1 = [5, 6]
-kernelSize2 = (3, 3)
-kernelSize3 = (3, 3)
-pool_1 = (3, 3)
+kernelSize1 = [5, 5]
+kernelSize2 = [5, 5]
+pool_1 = (4, 4)
 pool_2 = (4, 4)
-pool_3 = (5, 5)
 
 model = Sequential()
-layer1 = Conv2D(Filters1, (kernelSize1[0], kernelSize1[1]), input_shape=(HEIGHT, WIDTH, CHANNELS), use_bias=False,
+layer1 = Conv2D(Filters1, (kernelSize1[0], kernelSize1[1]),
+                input_shape=(HEIGHT, WIDTH, CHANNELS),
+                use_bias=False,
                 padding='same', activation='sigmoid')
 model.add(layer1)
 model.add(Dropout(0.2))
 model.add(MaxPooling2D(pool_size=pool_1, strides=None, padding='same', data_format=None))
 model.add(Conv2D(Filters2, kernelSize2, activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
+model.add(BatchNormalization(axis=3))
 model.add(Dropout(0.2))
 model.add(MaxPooling2D(pool_size=pool_2, strides=None, padding='same', data_format=None))
-model.add(Conv2D(Filters3, kernelSize3, activation='sigmoid', padding='same', kernel_constraint=maxnorm(3)))
 # model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(MaxPooling2D(pool_size=pool_3, strides=None, padding='same', data_format=None))
 model.add(Flatten())
 model.add(Dense(512, activation='relu', kernel_constraint=maxnorm(3)))
 model.add(Dropout(0.5))
 model.add(Dense(M, activation='softmax'))
 
 model.summary()
-exit()
 
 # plot_model(model, to_file='model.png')
 # exit()
@@ -142,7 +156,7 @@ model2 = Sequential()
 model2.add(
     Conv2D(Filters1, (kernelSize1[0], kernelSize1[1]),
            input_shape=(HEIGHT, WIDTH, CHANNELS),
-           use_bias=True, padding='same',
+           use_bias=False, padding='same',
            activation='sigmoid',
            kernel_constraint=maxnorm(3),
            weights=model.layers[0].get_weights())
@@ -152,7 +166,7 @@ print('first layer:', X_cv.shape, ' -> ', predictFirstLayer.shape)
 
 wrongPred = {}
 for h in range(0, len(X_cv)):
-    pickElem = X_cv[[h]]
+    pickElem = X_test[[h]]
     predict = model.predict(pickElem)
     digitPred = np.argmax(predict)
     digitAct = np.argmax(Y_cv[[h]])

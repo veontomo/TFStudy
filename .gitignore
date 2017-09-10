@@ -3,3 +3,7 @@ log/
 weights/
 *.iml
 *.png
+glove/
+newsgroup_dir
+poems.zip
+text8.zip
