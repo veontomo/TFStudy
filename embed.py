@@ -43,7 +43,6 @@ for name in sorted(os.listdir(TEXT_DATA_DIR)):
 
 print('Found %s texts.' % len(texts))
 
-
 tokenizer = Tokenizer(num_words=MAX_NB_WORDS)
 tokenizer.fit_on_texts(texts)
 sequences = tokenizer.texts_to_sequences(texts)
@@ -79,7 +78,11 @@ for line in f:
 f.close()
 
 print('Found %s word vectors.' % len(embeddings_index))
+print(np.dot(embeddings_index['father'], embeddings_index['mather']))
 
+print(np.dot(embeddings_index['computer'], embeddings_index['pencil']))
+
+exit()
 embedding_matrix = np.zeros((len(word_index) + 1, EMBEDDING_DIM))
 for word, i in word_index.items():
     embedding_vector = embeddings_index.get(word)
