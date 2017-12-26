@@ -29,7 +29,7 @@ rList = []
 with tf.Session() as sess:
     sess.run(init)
     for i in range(num_episodes):
-        print('\\r' + str(i))
+        print('\r' + str(i))
         # Reset environment and get first new observation
         s = env.reset()
         rAll = 0
