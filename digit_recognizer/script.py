@@ -11,7 +11,7 @@ import math
 from keras.utils import np_utils
 import os
 
-E = 15  # number of epochs
+E = 30  # number of epochs
 FRACTION_TRAIN = 0.7  # fraction of initial data to be used for training.
 FRACTION_CV = 0.1  # fraction of initial data to be used for cross-validation.
 FRACTION_TEST = 1 - FRACTION_CV - FRACTION_TRAIN  # fraction of initial data to be used for test
@@ -29,7 +29,7 @@ if FRACTION_TEST < 0:
     exit()
 
 TOTAL_LINE_NUMBERS = 42001
-LINE_NUMBERS = 20000  # number of lines to read from 'train.csv'
+LINE_NUMBERS = 30000  # number of lines to read from 'train.csv'
 
 HEIGHT = 28
 WIDTH = 28
@@ -208,6 +208,8 @@ history = model.fit(X_train, Y_train, validation_data=(X_cv, Y_cv), epochs=E)
 #predictFirstLayer = model2.predict(X_cv)
 #print('first layer:', X_cv.shape, ' -> ', predictFirstLayer.shape)
 
+MAX_ROWS = 10
+MAX_SIZE = MAX_ROWS*MAX_ROWS
 wrongPred = {}
 for h in range(0, len(X_cv)):
     pickElem = X_test[[h]]
@@ -216,6 +218,8 @@ for h in range(0, len(X_cv)):
     digitAct = np.argmax(Y_cv[[h]])
     if digitAct != digitPred:
         wrongPred[h] = [digitAct, digitPred]
+    if len(wrongPred) > MAX_SIZE:
+        break
 # print('confused', digitAct, 'with', digitPred)
 
 wrongPredSize = len(wrongPred)
