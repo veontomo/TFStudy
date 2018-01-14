@@ -22,14 +22,15 @@ init = tf.initialize_all_variables()
 # Set learning parameters
 y = .99
 e = 0.1
-num_episodes = 500
+num_episodes = 10000
 # create lists to contain total rewards and steps per episode
 jList = []
 rList = []
 with tf.Session() as sess:
     sess.run(init)
     for i in range(num_episodes):
-        print('\r' + str(i))
+        if i % 100 == 1:
+            print(str(i) + ": " + str(sum(rList) / i) + "%")
         # Reset environment and get first new observation
         s = env.reset()
         rAll = 0
@@ -54,11 +55,11 @@ with tf.Session() as sess:
             _, W1 = sess.run([updateModel, W], feed_dict={inputs1: np.identity(16)[s:s + 1], nextQ: targetQ})
             rAll += r
             s = s1
-            if d == True:
+            if d:
                 # Reduce chance of random action as we train the model.
                 e = 1. / ((i / 50) + 10)
                 break
         jList.append(j)
         rList.append(rAll)
-print("Percent of succesful episodes: " + str(sum(rList) / num_episodes) + "%")
+print("Percent of successful episodes: " + str(sum(rList) / num_episodes) + "%")
 plt.plot(rList)
