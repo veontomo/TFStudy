@@ -6,6 +6,9 @@ EMPTY = "."
 MARK_X = "x"
 MARK_O = "o"
 
+N = 3
+EMPTY_STATE = EMPTY * N * N
+
 
 def seq2grid(seq, size):
     return "\n".join(seq[i * size:(i + 1) * size] for i in range(size))
@@ -30,6 +33,7 @@ def make_move(state, pos, mark):
 
 
 def reward(state, index, size):
+    """ the reward one gets after making a move in position "index" so that the state after the move is "state" """
     chars = list(state)
     pivot = chars[index]
     index_row = int(index / size)
@@ -55,8 +59,7 @@ def reward(state, index, size):
     return 0
 
 
-N = 3
-initState = EMPTY * N * N
+initState = EMPTY_STATE
 states = {}
 states[initState] = 0.1
 
@@ -84,7 +87,7 @@ while r == 0:
 Q = {}
 state2 = initState
 mark = MARK_X
-EPOCHS = 2000
+EPOCHS = 20
 gamma = 0.99
 free_positions = get_free_positions(state2)
 # initialize available keys in Q table
@@ -124,10 +127,47 @@ for e in range(EPOCHS):
             # print("new value: Q[" + state1 + ", " + str(q[1]) + ", " + mark + "] = " + str(Q[(state1, q[1], mark)]))
 print(len(Q))
 
-state2 = "........."
+state2 = "xx......."
 free_positions = get_free_positions(state2)
 print(max([(Q[(state2, i, MARK_X)], i) for i in free_positions]))
 for i in free_positions:
     new_state = make_move(state2, i, MARK_X)
     print(i, Q[(state2, i, MARK_X)])
     print(seq2grid(new_state, N))
+
+# Double player tic tac toe game
+# Q-table format:
+# Q = {".........": {"x": {0: 0.1223, 1: 0.887, ...}}, "x........": {"x": {1: 0.889, 2: 0.25, ...}, "o": {1: 0.223, ...}}}
+# so that
+# Q[S][M][P] gives the reward for placing the mark M in cell P when the state is S.
+
+Q = {}
+for first_move in get_free_positions(EMPTY_STATE):
+    if EMPTY_STATE not in Q:
+        Q[EMPTY_STATE] = {}
+    if MARK_X not in Q[EMPTY_STATE]:
+        Q[EMPTY_STATE][MARK_X] = {}
+    Q[EMPTY_STATE][MARK_X][first_move] = random.random()
+
+for state in list(Q.keys()):
+    for mark in Q[state]:
+        for pos in Q[state][mark]:
+            new_state = make_move(state, pos, mark)
+            r = reward(new_state, pos, N)
+            # make all the moves of the other player
+            available_positions = get_free_positions(new_state)
+            opponent_mark = toggle_mark(mark)
+            for opponent_position in available_positions:
+                state_after_opponent_move = make_move(new_state, opponent_position, opponent_mark)
+                opponent_reward = reward(state_after_opponent_move, opponent_position, N)
+                if state_after_opponent_move not in Q:
+                    Q[state_after_opponent_move] = {opponent_mark: dict([(i, random.random()) for i in get_free_positions(state_after_opponent_move)])}
+                if opponent_reward == 1:
+                    Q[state_after_opponent_move][opponent_mark][opponent_position] = opponent_reward
+
+
+for state in Q:
+    for mark in Q[state]:
+        for pos in Q[state][mark]:
+            print("state: " + state + ", mark: " + mark + ", position: " + str(pos) + ", reward: " + str(
+                Q[state][mark][pos]))
