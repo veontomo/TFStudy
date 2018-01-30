@@ -166,6 +166,7 @@ opponent_mark = toggle_mark(mark)
 EPOCHS = 60
 for e in range(0, EPOCHS):
     print("epoch " + str(e))
+    print(Q_X)
     for state in list(Q_X.keys()):
         for pos in list(Q_X[state]):
             s, r = move_reward(state, pos, mark, N)
@@ -188,6 +189,13 @@ for e in range(0, EPOCHS):
                     current_max = tmp
             Q_X[state][pos] = r + gamma * current_max
     # print(Q_X[EMPTY_STATE])
+    print("Pass to the next iteration? [y/n]")
+    decision = input()
+    if decision == 'y':
+        continue
+    else:
+        break
+
 
 print(len(Q_X))
 print(Q_X["...xx.oo."])
